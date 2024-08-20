@@ -17,6 +17,7 @@ const SETTING_NAMES = {
     copyToClipboardOnSelect: "frogger.copyToClipboardOnSelect",
     searchBackwards: "frogger.searchBackwards",
     searchBackwardsByDefault: "frogger.searchBackwardsByDefault",
+	lastSearchTerm: "frogger.lastSearchTerm",
 };
 
 const COMMANDS = {
@@ -106,8 +107,8 @@ function activate(context) {
     function createDefaultSetting(settingName) {
         return vscode.workspace.getConfiguration().get(settingName, false);
     }
-    function updateGlobalState(settingName, settingDefault) {
-        context.globalState.update(settingName, settingDefault);
+    function updateGlobalState(settingName, value) {
+        context.globalState.update(settingName, value);
     }
     function getGlobalState(settingName, settingDefault) {
         return context.globalState.get(settingName, settingDefault);
@@ -226,9 +227,20 @@ function activate(context) {
     });
 
     inputBox.onDidHide(() => {
+        inputBox.value = "";
         setFroggerFocusContext(undefined);
         inputBox.hide();
     });
+
+    inputBox.openBox = () => {
+		highlightCurrentCharacter();
+        setFroggerFocusContext(true);
+        inputBox.show();
+    };
+    inputBox.storeSearchTerm = (searchTerm) => {
+		updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm)
+        inputBox.prompt = `or jump to  ${searchTerm}  again!`;
+    };
 
     // |---------------------------|
     // |        UI Commands        |
@@ -276,7 +288,17 @@ function activate(context) {
             const { insertCursorBefore, selectToMatch, searchBackwards } =
                 getAllGlobalState();
 
-            jump(insertCursorBefore, selectToMatch, searchBackwards);
+            inputBox.openBox();
+            inputBox.onDidChangeValue((searchTerm) => {
+                Jump(
+                    searchTerm,
+                    insertCursorBefore,
+                    selectToMatch,
+                    searchBackwards
+                );
+                inputBox.storeSearchTerm(searchTerm);
+                inputBox.hide();
+            });
         }),
         /*
 
@@ -285,25 +307,10 @@ function activate(context) {
     ]; // end of commands
 
     context.subscriptions.push(inputBox, ...commands);
-
     /*
 
 
 	*/
-    function jump(insertCursorBefore, selectToMatch, searchBackwards) {
-        setFroggerFocusContext(true);
-        inputBox.show();
-
-        // Handle when the user types in the input box
-        inputBox.onDidChangeValue((value) => {
-            if (value.length > 0) {
-                searchInEditor(value, insertCursorBefore);
-                inputBox.value = "";
-                inputBox.hide();
-            }
-            inputBox.hide();
-        });
-    }
 } // end of activate()
 
 function setWhenContext(key, value) {
@@ -316,11 +323,28 @@ function createTooltip(buttonSettings, settingState) {
     return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
 }
 
-function searchInEditor(searchTerm, insertCursorBefore) {
-    // store the searchTerm in global state
+
+// fix this shit
+function highlightCurrentCharacter(){
+
+	const editor = vscode.window.activeTextEditor;
+	const cursorPosition = editor.selection.active;
+	const cursorOffset = editor.document.positionAt(cursorPosition);
+	const cursor = new vscode.Range(cursorOffset, cursorOffset+1)
+	editor.selection = new vscode.Selection(cursor.start,cursor.end);
+
+}
+
+// |--------------------|
+// |        Jump        |
+// |--------------------|
+
+function Jump(searchTerm, insertCursorBefore, selectToMatch, searchBackwards) {
 
     const editor = vscode.window.activeTextEditor;
+
     if (editor && searchTerm) {
+
         const document = editor.document;
 
         const text = document.getText();
