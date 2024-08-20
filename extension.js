@@ -67,10 +67,9 @@ const BUTTONS = {
 };
 
 function activate(context) {
-
-	// |-------------------------|
-	// |        Settings         |
-	// |-------------------------|
+  // |-------------------------|
+  // |        Settings         |
+  // |-------------------------|
 
   //   insertCursor setting
   // ------------------------
@@ -79,7 +78,26 @@ function activate(context) {
     // get the overridden settings from settings.json else the default false setting
     .get(SETTING_NAMES.insertCursorBeforeByDefault, false);
 
-  context.globalState.update("insertCursorBefore", insertCursorBeforeDefault);
+  // update global state to match the default settings
+  context.globalState.update(
+    SETTING_NAMES.insertCursorBefore,
+    insertCursorBeforeDefault
+  );
+
+  //   select setting
+  // ------------------
+  const selectToMatchDefault = vscode.workspace
+    .getConfiguration()
+    .get(SETTING_NAMES.selectToMatch, false);
+  context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatchDefault);
+
+  //   search backwards setting
+  // ----------------------------
+
+  const searchBackwardsDefault = vscode.workspace
+    .getConfiguration()
+    .get(SETTING_NAMES.selectToMatch, false);
+  context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatchDefault);
 
   // context.globalState.update('setting', newState);
   // context.globalState.get('setting', false);
@@ -87,25 +105,16 @@ function activate(context) {
   // create variables for the following
 
   /*
-		highlightToMatch     		cmd+l
-		insertCursorBeforeMatch   	cmd+i
+		selectToMatch     		cmd+l
+		insertCursorBefore		  	cmd+i
 		searchBackwards      		cmd+k
 		searchFromTop				cmd+t
 		searchFromBottom			cmd+b
 	*/
 
-  /*
-	 settings
-
-		searchBackwardsIfNoMatch
-		insertCursorBeforeMatchByDefault
-		wrapSearch
-
-	*/
-
-	// |-------------------------|
-	// |        create UI        |
-	// |-------------------------|
+  // |-------------------------|
+  // |        create UI        |
+  // |-------------------------|
 
   const inputBox = vscode.window.createInputBox();
   inputBox.placeholder = "jump to ...";
@@ -123,7 +132,7 @@ function activate(context) {
 			- "frogger.jumpToNext"
 		- command to jump to the prev occurence of the prev search
 			- "frogger.jumpToPrev"
-		- command to jump with highlighting already selected
+		- command to jump with selecting already selected
 			- "frogger.jumpSelect"
 		- command to jump with backwards already selected
 			- "frogger.jumpBackwards"
@@ -138,59 +147,81 @@ function activate(context) {
 		- command to toggle all variables
 	*/
 
+  // |---------------------------|
+  // |        UI Commands        |
+  // |---------------------------|
 
-	// |---------------------------|
-	// |        UI Commands        |
-	// |---------------------------|
+  const commands = [
+    vscode.commands.registerCommand(
+      COMMANDS.toggleInsertCursor,
 
+      () => {
+        vscode.window.showInformationMessage("toggling insertCursor");
+        // get the current global state and toggle the value
+        const insertCursorBefore = !context.globalState.get(
+          SETTING_NAMES.insertCursorBefore,
+          insertCursorBeforeDefault
+        );
 
-  const toggleInsertCursor = vscode.commands.registerCommand(
-    "frogger.toggleInsertCursor",
-    () => {
-		vscode.window.showInformationMessage('toggling insert cursor');
-      // get the current global state
-      const insertCursorBefore = !context.globalState.get(
-        "insertCursorBefore",
-        insertCursorBeforeDefault
-      );
-      // update the state to the toggled value
-      context.globalState.update("insertCursorBefore", insertCursorBefore);
-      // update the ui to reflect the new state
-      inputBox.buttons = createButtons({
-        id: "insert",
-        iconPath: new vscode.ThemeIcon(
-          insertCursorBefore ? "chevron-left" : "chevron-right"
-        ),
-        tooltip: `Insert Cursor ${insertCursorBefore ? "Before" : "After"}`,
-      });
-    }
-  );
+        // update the state
+        context.globalState.update(
+          SETTING_NAMES.insertCursorBefore,
+          insertCursorBefore
+        );
 
+        // update the ui to reflect the new state
+        inputBox.buttons = createButtons({
+          id: BUTTONS.insert.id,
+          iconPath: new vscode.ThemeIcon(
+            BUTTONS.insert.icons[insertCursorBefore]
+          ),
+          tooltip: BUTTONS.insert.tip[insertCursorBefore],
+        });
+      }
+    ),
+    vscode.commands.registerCommand(
+      COMMANDS.toggleSelectToMatch,
 
-  	// |-------------------------------|
-	// |        Search Commands        |
-	// |-------------------------------|
+      () => {
+        vscode.window.showInformationMessage("toggling selectToMatch");
+        const selectToMatch = !context.globalState.get(
+          SETTING_NAMES.selectToMatch,
+          selectToMatchDefault
+        );
+        context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatch);
+        inputBox.buttons = createButtons({
+          id: BUTTONS.select.id,
+          iconPath: new vscode.ThemeIcon(BUTTONS.select.icons[selectToMatch]),
+          tooltip: BUTTONS.select.tip[selectToMatch],
+        });
+      }
+    ),
 
-  const standardJump = vscode.commands.registerCommand("frogger.jump", () => {
-	vscode.commands.executeCommand('setContext', 'froggerFocused', true)
-    const insertCursorBefore = context.globalState.get(
-      "insertCursorBefore",
-      insertCursorBeforeDefault
-    );
+    // |-------------------------------|
+    // |        Search Commands        |
+    // |-------------------------------|
 
-    jump(inputBox, insertCursorBefore);
-  });
+    vscode.commands.registerCommand(
+      COMMANDS.jump,
 
-  context.subscriptions.push(inputBox, standardJump, toggleInsertCursor);
+      () => {
+        const insertCursorBefore = context.globalState.get(
+          SETTING_NAMES.insertCursorBefore,
+          insertCursorBeforeDefault
+        );
 
+        jump(insertCursorBefore);
+      }
+    ),
+  ]; // end of commands
+  context.subscriptions.push(inputBox, ...commands);
 
-
-  // |----------------------------|
-  // |        Helper Funcs        |
-  // |----------------------------|
+  // |--------------------------------|
+  // |        Helper Functions        |
+  // |--------------------------------|
 
   function createButtons(button) {
-		/*
+    /*
 			returns the interface buttons
 			accepts a button object as a parameter that will replace the default button with the matching id
 		*/
@@ -220,12 +251,14 @@ function activate(context) {
     );
   }
 
-} // end of activate()
+  /*
 
 
+  */
+  function jump(insertCursorBefore) {
 
-function jump(inputBox, insertCursorBefore) {
-  inputBox.show();
+    setFroggerFocusContext(true);
+    inputBox.show();
 
     // Handle when the user types in the input box
     inputBox.onDidChangeValue((value) => {
@@ -257,15 +290,23 @@ function jump(inputBox, insertCursorBefore) {
       }
     });
 
-  inputBox.onDidAccept(() => {
-    inputBox.hide();
-  });
+    inputBox.onDidAccept(() => {
+      inputBox.hide();
+    });
 
-  inputBox.onDidHide(() => {
-	vscode.window.showInformationMessage("hiding window")
-	vscode.commands.executeCommand('setContext', 'froggerFocused', undefined);
-    inputBox.hide();
-  });
+    inputBox.onDidHide(() => {
+      setFroggerFocusContext(undefined);
+      inputBox.hide();
+    });
+  }
+} // end of activate()
+
+function setWhenContext(key, value) {
+  return vscode.commands.executeCommand("setContext", key, value);
+}
+function setFroggerFocusContext(value) {
+//   vscode.window.showInformationMessage("frogger is viewable");
+  return setWhenContext(CONTEXTS.froggerIsViewable, value);
 }
 
 function searchInEditor(searchTerm, insertCursorBefore) {
