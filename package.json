@@ -21,7 +21,17 @@
       {
         "key": "cmd+i",
         "command": "frogger.toggleInsertCursor",
-        "when": "froggerFocused"
+        "when": "FroggerIsViewable"
+      },
+      {
+        "key": "cmd+l",
+        "command": "frogger.toggleSelectToMatch",
+        "when": "FroggerIsViewable"
+      },
+      {
+        "key": "cmd+k",
+        "command": "frogger.toggleSearchBackwards",
+        "when": "FroggerIsViewable"
       },
       {
         "key": "cmd+j",
