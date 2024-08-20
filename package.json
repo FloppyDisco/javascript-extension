@@ -1,7 +1,8 @@
 {
-  "name": "javascript-extension",
-  "displayName": "javascript-extension",
-  "description": "",
+  "name": "frogger",
+  "displayName": "frogger",
+  "publisher": "Bluesteel Software",
+  "description": "jump cursor using single character searching line 'f' in vim",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.92.0"
@@ -9,12 +10,22 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
+    "keybindings": [
+      {
+        "key": "cmd+j",
+        "command": "frogger.jump"
+      },
+      {
+        "key": "cmd+j",
+        "command": "-workbench.action.togglePanel"
+      }
+    ],
     "commands": [{
-      "command": "javascript-extension.helloWorld",
-      "title": "Hello World"
+      "command": "frogger.jump",
+      "title": "Jump to character ..."
     }]
   },
   "scripts": {
