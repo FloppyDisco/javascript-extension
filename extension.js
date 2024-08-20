@@ -1,15 +1,83 @@
 const vscode = require("vscode");
 
+/*
+settings.json
+	"frogger.insertCursorBeforeByDefault"
+	"frogger.selectToMatchByDefault"
+	"frogger.searchBackwardsByDefault"
+	"frogger.copyToClipboardOnSelect"
+	""
+
+
+	wrapSearch
+	searchBackwardsIfNoMatch
+	insertCursorBeforeByDefault
+
+*/
+
+const SETTING_NAMES = {
+  insertCursorBefore: "frogger.insertCursorBefore",
+  insertCursorBeforeByDefault: "frogger.insertCursorBeforeByDefault",
+  selectToMatch: "frogger.selectToMatch",
+  selectToMatchByDefault: "frogger.selectToMatchByDefault",
+  copyToClipboardOnSelect: "frogger.copyToClipboardOnSelect",
+  searchBackwards: "frogger.searchBackwards",
+  searchBackwardsByDefault: "frogger.searchBackwardsByDefault",
+};
+
+const COMMANDS = {
+  toggleInsertCursor: "frogger.toggleInsertCursor",
+  toggleSelectToMatch: "frogger.toggleSelectToMatch",
+
+  jump: "frogger.jump",
+};
+
+const CONTEXTS = {
+  froggerIsViewable: "FroggerIsViewable",
+};
+
+const BUTTONS = {
+  close: {
+    id: "close",
+    icon: "close",
+    tip: "Close",
+  },
+  insert: {
+    id: "insert",
+    icons: {
+      true: "triangle-left",
+      false: "triangle-right",
+    },
+    tip: {
+      true: "Insert Cursor Before",
+      false: "Insert Cursor After",
+    },
+  },
+  select: {
+    id: "select",
+    icons: {
+      true: "pencil",
+      false: "whole-word",
+    },
+    tip: {
+      true: "Select to Match",
+      false: "Jump to Match",
+    },
+  },
+};
+
 function activate(context) {
 
 	// |-------------------------|
 	// |        Settings         |
 	// |-------------------------|
 
-	// insertCursor setting
+  //   insertCursor setting
+  // ------------------------
   const insertCursorBeforeDefault = vscode.workspace
     .getConfiguration()
-    .get("frogger.insertCursorBeforeByDefault", false);
+    // get the overridden settings from settings.json else the default false setting
+    .get(SETTING_NAMES.insertCursorBeforeByDefault, false);
 
   context.globalState.update("insertCursorBefore", insertCursorBeforeDefault);
 
@@ -128,22 +196,27 @@ function activate(context) {
 		*/
     const defaultButtons = [
       {
-        id: "insert",
+        id: BUTTONS.insert.id,
         iconPath: new vscode.ThemeIcon(
-          insertCursorBeforeDefault ? "chevron-left" : "chevron-right"
+          BUTTONS.insert.icons[insertCursorBeforeDefault]
         ),
-        tooltip: `Insert Cursor ${
-          insertCursorBeforeDefault ? "Before" : "After"
-        }`,
+        tooltip: BUTTONS.insert.tip[insertCursorBeforeDefault],
       },
       {
-        id: "close",
-        iconPath: new vscode.ThemeIcon("close"),
-        tooltip: "Close",
+        id: BUTTONS.select.id,
+        iconPath: new vscode.ThemeIcon(
+          BUTTONS.select.icons[selectToMatchDefault]
+        ),
+        tooltip: BUTTONS.select.tip[selectToMatchDefault],
+      },
+      {
+        id: BUTTONS.close.id,
+        iconPath: new vscode.ThemeIcon(BUTTONS.close.icon),
+        tooltip: BUTTONS.close.tip,
       },
     ];
     return defaultButtons.map((defButton) =>
-      defButton.id === button?.id ? button : defButton
+      button && defButton.id === button.id ? button : defButton
     );
   }
 
@@ -154,30 +227,35 @@ function activate(context) {
 function jump(inputBox, insertCursorBefore) {
   inputBox.show();
 
-  // Handle when the user types in the input box
-  inputBox.onDidChangeValue((value) => {
-    if (value.length > 0) {
-      vscode.window.showInformationMessage(`froggering to: ${value}`);
-      searchInEditor(value, insertCursorBefore);
-      inputBox.value = "";
-      inputBox.hide();
-    }
-    inputBox.hide();
-  });
-  inputBox.onDidTriggerButton((button) => {
-    switch (button.id) {
-      case "insert":
-        // Call a command when the "Trigger Command" button is clicked
-        vscode.commands.executeCommand("frogger.toggleInsertCursor");
-        break;
-      case "close":
+    // Handle when the user types in the input box
+    inputBox.onDidChangeValue((value) => {
+      if (value.length > 0) {
+        vscode.window.showInformationMessage(`froggering to: ${value}`);
+
+        searchInEditor(value, insertCursorBefore);
+        inputBox.value = "";
         inputBox.hide();
-        break;
-      default:
-        // Handle any other cases if necessary
-        break;
-    }
-  });
+      }
+      inputBox.hide();
+    });
+
+    inputBox.onDidTriggerButton((button) => {
+      switch (button.id) {
+        case BUTTONS.insert.id:
+          vscode.commands.executeCommand(COMMANDS.toggleInsertCursor);
+          break;
+        case BUTTONS.select.id:
+          vscode.commands.executeCommand(COMMANDS.toggleSelectToMatch);
+          break;
+        case BUTTONS.close.id:
+          inputBox.hide();
+          break;
+
+        default:
+          // Handle any other cases if necessary
+          break;
+      }
+    });
 
   inputBox.onDidAccept(() => {
     inputBox.hide();
