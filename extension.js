@@ -6,13 +6,7 @@ settings.json
 	"frogger.selectToMatchByDefault"
 	"frogger.searchBackwardsByDefault"
 	"frogger.copyToClipboardOnSelect"
-	""
-
-
-	wrapSearch
-	searchBackwardsIfNoMatch
-	insertCursorBeforeByDefault
-
+	"frogger.wrapSearch"
 */
 
 const SETTING_NAMES = {
@@ -28,6 +22,7 @@ const SETTING_NAMES = {
 const COMMANDS = {
   toggleInsertCursor: "frogger.toggleInsertCursor",
   toggleSelectToMatch: "frogger.toggleSelectToMatch",
+  toggleSearchBackwards: "frogger.toggleSearchBackwards",
 
   jump: "frogger.jump",
 };
@@ -40,7 +35,7 @@ const BUTTONS = {
   close: {
     id: "close",
     icon: "close",
-    tip: "Close",
+    tooltip: "Close (Escape)",
   },
   insert: {
     id: "insert",
@@ -52,17 +47,31 @@ const BUTTONS = {
       true: "Insert Cursor Before",
       false: "Insert Cursor After",
     },
-  },
-  select: {
-    id: "select",
+	key: '⌘I'
+},
+select: {
+	id: "select",
     icons: {
-      true: "pencil",
-      false: "whole-word",
+		true: "pencil",
+		false: "whole-word",
     },
     tip: {
-      true: "Select to Match",
-      false: "Jump to Match",
+		true: "Select to Match",
+		false: "Jump to Match",
     },
+	key: '⌘L'
+},
+searchBackwards: {
+	id: "searchBackwards",
+    icons: {
+		true: "arrow-left",
+		false: "arrow-right",
+    },
+    tip: {
+		true: "Search Backwards",
+		false: "Search Forwards",
+    },
+	key: '⌘K'
   },
 };
 
@@ -71,56 +80,95 @@ function activate(context) {
   // |        Settings         |
   // |-------------------------|
 
+  function createDefaultSetting(settingName) {
+    return vscode.workspace.getConfiguration().get(settingName, false);
+  }
+  function updateGlobalState(settingName, settingDefault) {
+    context.globalState.update(settingName, settingDefault);
+  }
+  function getGlobalState(settingName, settingDefault) {
+    return context.globalState.get(settingName, settingDefault);
+  }
+
   //   insertCursor setting
   // ------------------------
-  const insertCursorBeforeDefault = vscode.workspace
-    .getConfiguration()
-    // get the overridden settings from settings.json else the default false setting
-    .get(SETTING_NAMES.insertCursorBeforeByDefault, false);
-
-  // update global state to match the default settings
-  context.globalState.update(
+  const insertCursorBeforeDefault = createDefaultSetting(
+    SETTING_NAMES.insertCursorBeforeByDefault
+  );
+  updateGlobalState(
     SETTING_NAMES.insertCursorBefore,
     insertCursorBeforeDefault
   );
 
   //   select setting
   // ------------------
-  const selectToMatchDefault = vscode.workspace
-    .getConfiguration()
-    .get(SETTING_NAMES.selectToMatch, false);
-  context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatchDefault);
+  const selectToMatchDefault = createDefaultSetting(
+    SETTING_NAMES.selectToMatchByDefault
+  );
+  updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatchDefault);
 
   //   search backwards setting
   // ----------------------------
-
-  const searchBackwardsDefault = vscode.workspace
-    .getConfiguration()
-    .get(SETTING_NAMES.selectToMatch, false);
-  context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatchDefault);
-
-  // context.globalState.update('setting', newState);
-  // context.globalState.get('setting', false);
-
-  // create variables for the following
-
-  /*
-		selectToMatch     		cmd+l
-		insertCursorBefore		  	cmd+i
-		searchBackwards      		cmd+k
-		searchFromTop				cmd+t
-		searchFromBottom			cmd+b
-	*/
+  const searchBackwardsDefault = createDefaultSetting(
+    SETTING_NAMES.selectToMatchByDefault
+  );
+  updateGlobalState(SETTING_NAMES.searchBackwards, selectToMatchDefault);
 
   // |-------------------------|
   // |        create UI        |
   // |-------------------------|
 
+  function createTooltip(buttonSettings, settingState){
+	return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`
+  }
+
+  function createButtons() {
+
+    const insertCursorBefore = getGlobalState(
+      SETTING_NAMES.insertCursorBefore,
+      insertCursorBeforeDefault
+    );
+    const selectToMatch = getGlobalState(
+      SETTING_NAMES.selectToMatch,
+      selectToMatchDefault
+    );
+    const searchBackwards = getGlobalState(
+      SETTING_NAMES.searchBackwards,
+      searchBackwardsDefault
+    );
+
+    return [
+      {
+        id: BUTTONS.searchBackwards.id,
+        iconPath: new vscode.ThemeIcon(
+          BUTTONS.searchBackwards.icons[searchBackwards]
+        ),
+        tooltip: createTooltip(BUTTONS.searchBackwards, searchBackwards),
+      },
+      {
+        id: BUTTONS.insert.id,
+        iconPath: new vscode.ThemeIcon(
+          BUTTONS.insert.icons[insertCursorBefore]
+        ),
+        tooltip: createTooltip(BUTTONS.insert, insertCursorBefore),
+      },
+      {
+        id: BUTTONS.select.id,
+        iconPath: new vscode.ThemeIcon(BUTTONS.select.icons[selectToMatch]),
+        tooltip: createTooltip(BUTTONS.select,selectToMatch),
+      },
+      {
+        id: BUTTONS.close.id,
+        iconPath: new vscode.ThemeIcon(BUTTONS.close.icon),
+        tooltip: BUTTONS.close.tooltip,
+      },
+    ];
+  }
+
   const inputBox = vscode.window.createInputBox();
   inputBox.placeholder = "jump to ...";
-  inputBox.prompt = "jumping";
+  inputBox.prompt = "Enter will use the prev search character";
   inputBox.title = "🐸";
-
   inputBox.buttons = createButtons();
 
   /*
@@ -152,111 +200,64 @@ function activate(context) {
   // |---------------------------|
 
   const commands = [
-    vscode.commands.registerCommand(
-      COMMANDS.toggleInsertCursor,
+    vscode.commands.registerCommand(COMMANDS.toggleInsertCursor, () => {
+      // get the current global state and toggle the value
+      const insertCursorBefore = !getGlobalState(
+        SETTING_NAMES.insertCursorBefore,
+        insertCursorBeforeDefault
+      );
+      // update the state
+      updateGlobalState(
+        SETTING_NAMES.insertCursorBefore,
+        insertCursorBefore
+      );
+      // update the ui to reflect the new state
+      inputBox.buttons = createButtons();
+    }),
 
-      () => {
-        vscode.window.showInformationMessage("toggling insertCursor");
-        // get the current global state and toggle the value
-        const insertCursorBefore = !context.globalState.get(
-          SETTING_NAMES.insertCursorBefore,
-          insertCursorBeforeDefault
-        );
+    vscode.commands.registerCommand(COMMANDS.toggleSelectToMatch, () => {
+      const selectToMatch = !getGlobalState(
+        SETTING_NAMES.selectToMatch,
+        selectToMatchDefault
+      );
+      updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
+      inputBox.buttons = createButtons();
+    }),
 
-        // update the state
-        context.globalState.update(
-          SETTING_NAMES.insertCursorBefore,
-          insertCursorBefore
-        );
-
-        // update the ui to reflect the new state
-        inputBox.buttons = createButtons({
-          id: BUTTONS.insert.id,
-          iconPath: new vscode.ThemeIcon(
-            BUTTONS.insert.icons[insertCursorBefore]
-          ),
-          tooltip: BUTTONS.insert.tip[insertCursorBefore],
-        });
-      }
-    ),
-    vscode.commands.registerCommand(
-      COMMANDS.toggleSelectToMatch,
-
-      () => {
-        vscode.window.showInformationMessage("toggling selectToMatch");
-        const selectToMatch = !context.globalState.get(
-          SETTING_NAMES.selectToMatch,
-          selectToMatchDefault
-        );
-        context.globalState.update(SETTING_NAMES.selectToMatch, selectToMatch);
-        inputBox.buttons = createButtons({
-          id: BUTTONS.select.id,
-          iconPath: new vscode.ThemeIcon(BUTTONS.select.icons[selectToMatch]),
-          tooltip: BUTTONS.select.tip[selectToMatch],
-        });
-      }
-    ),
+    vscode.commands.registerCommand(COMMANDS.toggleSearchBackwards, () => {
+      const searchBackwards = !getGlobalState(
+        SETTING_NAMES.searchBackwards,
+        searchBackwardsDefault
+      );
+      updateGlobalState(
+        SETTING_NAMES.searchBackwards,
+        searchBackwards
+      );
+      inputBox.buttons = createButtons();
+    }),
 
     // |-------------------------------|
     // |        Search Commands        |
     // |-------------------------------|
 
-    vscode.commands.registerCommand(
-      COMMANDS.jump,
+    vscode.commands.registerCommand(COMMANDS.jump, () => {
+      const insertCursorBefore = getGlobalState(
+        SETTING_NAMES.insertCursorBefore,
+        insertCursorBeforeDefault
+      );
 
-      () => {
-        const insertCursorBefore = context.globalState.get(
-          SETTING_NAMES.insertCursorBefore,
-          insertCursorBeforeDefault
-        );
+      jump(insertCursorBefore);
+    }),
 
-        jump(insertCursorBefore);
-      }
-    ),
   ]; // end of commands
+
   context.subscriptions.push(inputBox, ...commands);
-
-  // |--------------------------------|
-  // |        Helper Functions        |
-  // |--------------------------------|
-
-  function createButtons(button) {
-    /*
-			returns the interface buttons
-			accepts a button object as a parameter that will replace the default button with the matching id
-		*/
-    const defaultButtons = [
-      {
-        id: BUTTONS.insert.id,
-        iconPath: new vscode.ThemeIcon(
-          BUTTONS.insert.icons[insertCursorBeforeDefault]
-        ),
-        tooltip: BUTTONS.insert.tip[insertCursorBeforeDefault],
-      },
-      {
-        id: BUTTONS.select.id,
-        iconPath: new vscode.ThemeIcon(
-          BUTTONS.select.icons[selectToMatchDefault]
-        ),
-        tooltip: BUTTONS.select.tip[selectToMatchDefault],
-      },
-      {
-        id: BUTTONS.close.id,
-        iconPath: new vscode.ThemeIcon(BUTTONS.close.icon),
-        tooltip: BUTTONS.close.tip,
-      },
-    ];
-    return defaultButtons.map((defButton) =>
-      button && defButton.id === button.id ? button : defButton
-    );
-  }
 
   /*
 
 
   */
   function jump(insertCursorBefore) {
-
     setFroggerFocusContext(true);
     inputBox.show();
 
@@ -279,6 +280,9 @@ function activate(context) {
           break;
         case BUTTONS.select.id:
           vscode.commands.executeCommand(COMMANDS.toggleSelectToMatch);
+          break;
+        case BUTTONS.searchBackwards.id:
+          vscode.commands.executeCommand(COMMANDS.toggleSearchBackwards);
           break;
         case BUTTONS.close.id:
           inputBox.hide();
@@ -305,7 +309,7 @@ function setWhenContext(key, value) {
   return vscode.commands.executeCommand("setContext", key, value);
 }
 function setFroggerFocusContext(value) {
-//   vscode.window.showInformationMessage("frogger is viewable");
+  //   vscode.window.showInformationMessage("frogger is viewable");
   return setWhenContext(CONTEXTS.froggerIsViewable, value);
 }
 
