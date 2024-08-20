@@ -19,6 +19,11 @@
         "command": "frogger.jump"
       },
       {
+        "key": "cmd+i",
+        "command": "frogger.toggleInsertCursor",
+        "when": "froggerFocused"
+      },
+      {
         "key": "cmd+j",
         "command": "-workbench.action.togglePanel"
       }
