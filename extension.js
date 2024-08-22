@@ -6,7 +6,6 @@ settings.json
 	"frogger.selectToMatchByDefault"
 	"frogger.searchBackwardsByDefault"
 	"frogger.copyToClipboardOnSelect"
-	"frogger.wrapSearch"
 */
 
 const SETTING_NAMES = {
@@ -17,7 +16,7 @@ const SETTING_NAMES = {
     copyToClipboardOnSelect: "frogger.copyToClipboardOnSelect",
     searchBackwards: "frogger.searchBackwards",
     searchBackwardsByDefault: "frogger.searchBackwardsByDefault",
-	lastSearchTerm: "frogger.lastSearchTerm",
+    lastSearchTerm: "frogger.lastSearchTerm",
 };
 
 const COMMANDS = {
@@ -26,6 +25,7 @@ const COMMANDS = {
     toggleSearchBackwards: "frogger.toggleSearchBackwards",
 
     jump: "frogger.jump",
+    jumpWithLastSearch: "frogger.jumpWithLastSearch",
     /*
 		add commands to start these functions with specific settings, regardless of state or defaults
 
@@ -99,6 +99,21 @@ const BUTTONS = {
     },
 };
 
+
+const HIGHLIGHTS ={
+    green: vscode.window.createTextEditorDecorationType(
+        {
+            backgroundColor: "rgba(0,255,0,0.25)",
+        }
+    ),
+    red: vscode.window.createTextEditorDecorationType(
+        {
+            backgroundColor: "rgba(255,0,0,0.25)",
+        }
+    ),
+};
+
+
 function activate(context) {
     // |-------------------------|
     // |        Settings         |
@@ -138,6 +153,9 @@ function activate(context) {
     );
     updateGlobalState(SETTING_NAMES.searchBackwards, selectToMatchDefault);
 
+    // make sure last search term is not set
+    updateGlobalState(SETTING_NAMES.lastSearchTerm, false);
+
     function getAllGlobalState() {
         return {
             insertCursorBefore: getGlobalState(
@@ -152,6 +170,10 @@ function activate(context) {
                 SETTING_NAMES.searchBackwards,
                 searchBackwardsDefault
             ),
+            lastSearchTerm: getGlobalState(
+                SETTING_NAMES.lastSearchTerm,
+                false
+            )
         };
     }
 
@@ -222,23 +244,45 @@ function activate(context) {
         }
     });
 
-    inputBox.onDidAccept(() => {
+    inputBox.onDidChangeValue((searchTerm) => {
+        const { insertCursorBefore, selectToMatch, searchBackwards } =
+            getAllGlobalState();
+
         inputBox.hide();
+        Jump(
+            searchTerm,
+            insertCursorBefore,
+            selectToMatch,
+            searchBackwards
+        );
+        inputBox.storeSearchTerm(searchTerm);
+    });
+    inputBox.onDidAccept(() => {
+
+        vscode.commands.executeCommand(COMMANDS.jumpWithLastSearch);
+
+        const editor = vscode.window.activeTextEditor
+        if (editor){
+            editor.setDecorations(HIGHLIGHTS.green,[])
+            const range = new vscode.Range(editor.selection.start, editor.document.positionAt(editor.document.offsetAt(editor.selection.end)+(getGlobalState(SETTING_NAMES.insertCursorBefore,false) ? 1 : -1)))
+            editor.setDecorations(HIGHLIGHTS.green,[range])
+        }
     });
 
     inputBox.onDidHide(() => {
         inputBox.value = "";
         setFroggerFocusContext(undefined);
         inputBox.hide();
+        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHTS.green,[])
     });
 
     inputBox.openBox = () => {
-		highlightCurrentCharacter();
+        // highlightCurrentCharacter();
         setFroggerFocusContext(true);
         inputBox.show();
     };
     inputBox.storeSearchTerm = (searchTerm) => {
-		updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm)
+        updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm);
         inputBox.prompt = `or jump to  ${searchTerm}  again!`;
     };
 
@@ -285,20 +329,24 @@ function activate(context) {
         // |-------------------------------|
 
         vscode.commands.registerCommand(COMMANDS.jump, () => {
-            const { insertCursorBefore, selectToMatch, searchBackwards } =
-                getAllGlobalState();
-
             inputBox.openBox();
-            inputBox.onDidChangeValue((searchTerm) => {
-                Jump(
-                    searchTerm,
-                    insertCursorBefore,
-                    selectToMatch,
-                    searchBackwards
-                );
-                inputBox.storeSearchTerm(searchTerm);
-                inputBox.hide();
-            });
+            // highlight current location in editor
+        }),
+        vscode.commands.registerCommand(COMMANDS.jumpWithLastSearch, () => {
+
+            // check how often this is used, maybe pull it back out of getAll
+            // const lastSearchTerm = getGlobalState(SETTING_NAMES.lastSearchTerm,undefined);
+
+            const { insertCursorBefore, selectToMatch, searchBackwards, lastSearchTerm } =
+            getAllGlobalState();
+            if (!lastSearchTerm){ return null }
+
+            Jump(
+                lastSearchTerm,
+                insertCursorBefore,
+                selectToMatch,
+                searchBackwards
+            )
         }),
         /*
 
@@ -307,10 +355,128 @@ function activate(context) {
     ]; // end of commands
 
     context.subscriptions.push(inputBox, ...commands);
-    /*
+
+    // |--------------------|
+    // |        Jump        |
+    // |--------------------|
+
+    function Jump(
+        searchTerm,
+        insertCursorBefore,
+        selectToMatch,
+        searchBackwards
+    ) {
+        // vscode.window.showInformationMessage(`jumping to ${searchTerm}`);
+        // console.log('settings:',);
+        // console.log('insertCursorBefore',insertCursorBefore);
+        // console.log('selectToMatch',selectToMatch);
+        // console.log('searchBackwards',searchBackwards);
 
 
-	*/
+
+
+        const editor = vscode.window.activeTextEditor;
+
+        if (editor && searchTerm) {
+            // escape any regex special characters
+            searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            // create regex to search for
+            const searchTermRegex = new RegExp(searchTerm, "g");
+
+            const document = editor.document;
+
+            // get selection (line: col)
+            const cursorPosition = editor.selection.active;
+
+            if (searchBackwards) {
+                //   Searching Backwards
+                // -----------------------
+
+                console.log('searching backwards',);
+
+
+                var textToSearch = document.getText(
+                    new vscode.Range(
+                        // top of document
+                        new vscode.Position(0, 0),
+                        // to the cursor
+                        cursorPosition
+                    )
+                );
+                textToSearch = [...textToSearch].reverse().join("");
+                const match = searchTermRegex.exec(textToSearch);
+                if (!match) {
+                    return null;
+                }
+            } else {
+
+                console.log('searching forwards',);
+
+                //   Searching Forwards
+                // ----------------------
+
+                // shift the cursor one char to prevent matching the first char repeatedly
+                var shiftedCursorPosition = document.positionAt(document.offsetAt(cursorPosition)+1);
+
+                // console.log('cursorPosition',cursorPosition);
+                // console.log('shiftedCursorPosition',shiftedCursorPosition);
+
+                const lastLine = document.lineCount - 1;
+
+                var textToSearch = document.getText(
+                    new vscode.Range(
+                        // from the shifted cursor
+                        shiftedCursorPosition,
+                        // to the bottom of document
+                        new vscode.Position(
+                            lastLine,
+                            document.lineAt(lastLine).range.end
+                        )
+                    )
+                );
+
+console.log('textToSearch',textToSearch);
+
+
+
+                var match = searchTermRegex.exec(textToSearch);
+                if (!match) {
+                    console.log('no match',);
+
+                    return null;
+                }
+            }
+            console.log('match',match);
+
+            // Calculate the actual position in the document
+            const startOffset =
+                document.offsetAt(shiftedCursorPosition) + match.index;
+            const endOffset = startOffset + 1;
+
+            const startPos = document.positionAt(startOffset);
+            const endPos = document.positionAt(endOffset);
+
+            const matchRange = new vscode.Range(startPos, endPos);
+
+            // highlight all matches
+
+
+            const newPosition = insertCursorBefore
+                ? matchRange.start
+                : matchRange.end;
+
+            // change this selection to include the old position if highlighting
+            // if jumping with a previous search the old position should be passed from the original search
+            // this will need to be stored in state
+            editor.selection = new vscode.Selection(newPosition, newPosition);
+
+            // make the reveal location editable from settings
+            editor.revealRange(
+                matchRange,
+                vscode.TextEditorRevealType.InCenter
+            );
+        }
+    }
 } // end of activate()
 
 function setWhenContext(key, value) {
@@ -323,111 +489,13 @@ function createTooltip(buttonSettings, settingState) {
     return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
 }
 
-
 // fix this shit
-function highlightCurrentCharacter(){
-
-	const editor = vscode.window.activeTextEditor;
-	const cursorPosition = editor.selection.active;
-	const cursorOffset = editor.document.positionAt(cursorPosition);
-	const cursor = new vscode.Range(cursorOffset, cursorOffset+1)
-	editor.selection = new vscode.Selection(cursor.start,cursor.end);
-
-}
-
-// |--------------------|
-// |        Jump        |
-// |--------------------|
-
-function Jump(searchTerm, insertCursorBefore, selectToMatch, searchBackwards) {
-
+function highlightCurrentCharacter() {
     const editor = vscode.window.activeTextEditor;
-
-    if (editor && searchTerm) {
-
-        const document = editor.document;
-
-        const text = document.getText();
-
-        // escape any regex special characters
-        searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-        const searchTermRegex = new RegExp(searchTerm, "g");
-
-        const cursorPosition = editor.selection.active;
-        const cursorOffset = document.offsetAt(cursorPosition);
-
-        const allMatches = [];
-        let match;
-        while ((match = searchTermRegex.exec(text)) !== null) {
-            const startPos = document.positionAt(match.index);
-            const endPos = document.positionAt(match.index + match[0].length);
-            allMatches.push(new vscode.Range(startPos, endPos));
-        }
-
-        const matchesBeforeCursor = allMatches.filter(
-            (range) => document.offsetAt(range.start) < cursorOffset
-        );
-        const matchesAfterCursor = allMatches.filter(
-            (range) => document.offsetAt(range.start) >= cursorOffset
-        );
-
-        // highlight all matches
-        const matchesBeforeHighlight =
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: "rgba(0,255,0,0.4)", //green
-            });
-        const matchesAfterHighlight =
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: "rgba(255,0,0,0.4)", //red
-            });
-        editor.setDecorations(matchesBeforeHighlight, matchesBeforeCursor);
-        editor.setDecorations(matchesAfterHighlight, matchesAfterCursor);
-
-        let targetMatch;
-
-        if (matchesAfterCursor.length > 0) {
-            targetMatch = matchesAfterCursor[0];
-        } else {
-            const WrapSearch = vscode.workspace
-                .getConfiguration()
-                .get("frogger.wrapSearch", false);
-
-            if (WrapSearch && matchesBeforeCursor.length > 0) {
-                targetMatch = matchesBeforeCursor[0];
-            } else {
-                const SearchBackwardsIfNoMatch = vscode.workspace
-                    .getConfiguration()
-                    .get("frogger.searchBackwardsIfNoMatch", false);
-
-                if (
-                    SearchBackwardsIfNoMatch &&
-                    matchesBeforeCursor.length > 0
-                ) {
-                    targetMatch =
-                        matchesBeforeCursor[matchesBeforeCursor.length - 1];
-                }
-            }
-        }
-
-        // modify this function to accept a highlighting feature
-        if (targetMatch) {
-            const newPosition = insertCursorBefore
-                ? targetMatch.start
-                : targetMatch.end;
-
-            // change this selection to include the old position if highlighting
-            // if jumping with a previous search the old position should be passed from the original search
-            // this will need to be stored in state
-            editor.selection = new vscode.Selection(newPosition, newPosition);
-
-            // make the reveal location editable from settings
-            editor.revealRange(
-                targetMatch,
-                vscode.TextEditorRevealType.InCenter
-            );
-        }
-    }
+    const cursorPosition = editor.selection.active;
+    const cursorOffset = editor.document.positionAt(cursorPosition);
+    const cursor = new vscode.Range(cursorOffset, cursorOffset + 1);
+    editor.selection = new vscode.Selection(cursor.start, cursor.end);
 }
 
 function deactivate() {}
