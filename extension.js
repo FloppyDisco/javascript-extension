@@ -507,7 +507,11 @@ function activate(context) {
                 selectToMatch ? startingCursorPosition ? startingCursorPosition : cursorPosition : newPosition,
                 newPosition
             );
-            
+
+            if(copyOnSelect){
+                vscode.env.clipboard.writeText(document.getText(editor.selection));
+            }
+
             editor.revealRange(
                 matchRange,
                 vscode.TextEditorRevealType[revealRange]
