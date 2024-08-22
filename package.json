@@ -44,6 +44,10 @@
             {
                 "command": "frogger.jump",
                 "title": "Jump to character ..."
+            },
+            {
+                "command": "frogger.jumpWithLastSearch",
+                "title": "Jump again using the previous search character"
             }
         ],
         "configuration": {
@@ -69,11 +73,6 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Enable this to copy the selected value to the clipboard automatically when selectToMatch is used"
-                },
-                "frogger.wrapSearch": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable this to wrap the search for characters back around the file"
                 }
             }
         }
