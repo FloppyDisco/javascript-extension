@@ -2,15 +2,15 @@ const vscode = require("vscode");
 
 /*
 settings.json
-	"frogger.insertCursorBeforeByDefault"
+	"frogger.insertCursorLeftByDefault"
 	"frogger.selectToMatchByDefault"
 	"frogger.searchBackwardsByDefault"
 	"frogger.copyToClipboardOnSelect"
 */
 
 const SETTING_NAMES = {
-    insertCursorBefore: "frogger.insertCursorBefore",
-    insertCursorBeforeByDefault: "frogger.insertCursorBeforeByDefault",
+    insertCursorLeft: "frogger.insertCursorLeft",
+    insertCursorLeftByDefault: "frogger.insertCursorLeftByDefault",
     selectToMatch: "frogger.selectToMatch",
     selectToMatchByDefault: "frogger.selectToMatchByDefault",
     copyToClipboardOnSelect: "frogger.copyToClipboardOnSelect",
@@ -39,9 +39,9 @@ const COMMANDS = {
 			- "frogger.jumpSelect"
 		- command to jump with backwards already selected
 			- "frogger.jumpBackwards"
-		- command to jump with insertCursorBeforeMatch set to true
+		- command to jump with insertCursorLeftMatch set to true
 			- "frogger.jumpTo"
-		- command to jump with insertCursorBeforeMatch set to false
+		- command to jump with insertCursorLeftMatch set to false
 			- "frogger.jumpAfter"
 		- command to jump to first occurence from top of file
 			- "frogger.jumpFromTop"
@@ -68,8 +68,8 @@ const BUTTONS = {
             false: "triangle-right",
         },
         tip: {
-            true: "Insert Cursor Before",
-            false: "Insert Cursor After",
+            true: "Insert Cursor Left",
+            false: "Insert Cursor Right",
         },
         key: "⌘I",
     },
@@ -99,20 +99,14 @@ const BUTTONS = {
     },
 };
 
-
-const HIGHLIGHTS ={
-    green: vscode.window.createTextEditorDecorationType(
-        {
-            backgroundColor: "rgba(0,255,0,0.25)",
-        }
-    ),
-    red: vscode.window.createTextEditorDecorationType(
-        {
-            backgroundColor: "rgba(255,0,0,0.25)",
-        }
-    ),
+const HIGHLIGHTS = {
+    green: vscode.window.createTextEditorDecorationType({
+        backgroundColor: "rgba(0,255,0,0.25)",
+    }),
+    red: vscode.window.createTextEditorDecorationType({
+        backgroundColor: "rgba(255,0,0,0.25)",
+    }),
 };
-
 
 function activate(context) {
     // |-------------------------|
@@ -131,12 +125,12 @@ function activate(context) {
 
     //   insertCursor setting
     // ------------------------
-    const insertCursorBeforeDefault = createDefaultSetting(
-        SETTING_NAMES.insertCursorBeforeByDefault
+    const insertCursorLeftDefault = createDefaultSetting(
+        SETTING_NAMES.insertCursorLeftByDefault
     );
     updateGlobalState(
-        SETTING_NAMES.insertCursorBefore,
-        insertCursorBeforeDefault
+        SETTING_NAMES.insertCursorLeft,
+        insertCursorLeftDefault
     );
 
     //   select setting
@@ -158,9 +152,9 @@ function activate(context) {
 
     function getAllGlobalState() {
         return {
-            insertCursorBefore: getGlobalState(
-                SETTING_NAMES.insertCursorBefore,
-                insertCursorBeforeDefault
+            insertCursorLeft: getGlobalState(
+                SETTING_NAMES.insertCursorLeft,
+                insertCursorLeftDefault
             ),
             selectToMatch: getGlobalState(
                 SETTING_NAMES.selectToMatch,
@@ -170,10 +164,7 @@ function activate(context) {
                 SETTING_NAMES.searchBackwards,
                 searchBackwardsDefault
             ),
-            lastSearchTerm: getGlobalState(
-                SETTING_NAMES.lastSearchTerm,
-                false
-            )
+            lastSearchTerm: getGlobalState(SETTING_NAMES.lastSearchTerm, false),
         };
     }
 
@@ -182,7 +173,7 @@ function activate(context) {
     // |-------------------------|
 
     function createButtons() {
-        const { insertCursorBefore, selectToMatch, searchBackwards } =
+        const { insertCursorLeft, selectToMatch, searchBackwards } =
             getAllGlobalState();
 
         return [
@@ -199,9 +190,9 @@ function activate(context) {
             {
                 id: BUTTONS.insert.id,
                 iconPath: new vscode.ThemeIcon(
-                    BUTTONS.insert.icons[insertCursorBefore]
+                    BUTTONS.insert.icons[insertCursorLeft]
                 ),
-                tooltip: createTooltip(BUTTONS.insert, insertCursorBefore),
+                tooltip: createTooltip(BUTTONS.insert, insertCursorLeft),
             },
             {
                 id: BUTTONS.select.id,
@@ -245,27 +236,35 @@ function activate(context) {
     });
 
     inputBox.onDidChangeValue((searchTerm) => {
-        const { insertCursorBefore, selectToMatch, searchBackwards } =
+        const { insertCursorLeft, selectToMatch, searchBackwards } =
             getAllGlobalState();
 
         inputBox.hide();
-        Jump(
-            searchTerm,
-            insertCursorBefore,
-            selectToMatch,
-            searchBackwards
-        );
+        Jump(searchTerm, insertCursorLeft, selectToMatch, searchBackwards);
         inputBox.storeSearchTerm(searchTerm);
     });
     inputBox.onDidAccept(() => {
 
+        // jump with the previous search term
         vscode.commands.executeCommand(COMMANDS.jumpWithLastSearch);
 
-        const editor = vscode.window.activeTextEditor
-        if (editor){
-            editor.setDecorations(HIGHLIGHTS.green,[])
-            const range = new vscode.Range(editor.selection.start, editor.document.positionAt(editor.document.offsetAt(editor.selection.end)+(getGlobalState(SETTING_NAMES.insertCursorBefore,false) ? 1 : -1)))
-            editor.setDecorations(HIGHLIGHTS.green,[range])
+        // highlight the current position in the editor for clarity
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+
+            // clear previous highlighting
+            editor.setDecorations(HIGHLIGHTS.green, []);
+
+            const {searchBackwards, insertCursorLeft} = getAllGlobalState();
+
+
+            const startPosition = editor.selection.start;
+            const endPosition = editor.document.positionAt(
+                editor.document.offsetAt(editor.selection.end)
+                    + insertCursorLeft ? 1 : -1
+            );
+            const range = new vscode.Range(startPosition, endPosition);
+            editor.setDecorations(HIGHLIGHTS.green, [range]);
         }
     });
 
@@ -273,7 +272,7 @@ function activate(context) {
         inputBox.value = "";
         setFroggerFocusContext(undefined);
         inputBox.hide();
-        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHTS.green,[])
+        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHTS.green, []);
     });
 
     inputBox.openBox = () => {
@@ -293,14 +292,14 @@ function activate(context) {
     const commands = [
         vscode.commands.registerCommand(COMMANDS.toggleInsertCursor, () => {
             // get the current global state and toggle the value
-            const insertCursorBefore = !getGlobalState(
-                SETTING_NAMES.insertCursorBefore,
-                insertCursorBeforeDefault
+            const insertCursorLeft = !getGlobalState(
+                SETTING_NAMES.insertCursorLeft,
+                insertCursorLeftDefault
             );
             // update the state
             updateGlobalState(
-                SETTING_NAMES.insertCursorBefore,
-                insertCursorBefore
+                SETTING_NAMES.insertCursorLeft,
+                insertCursorLeft
             );
             // update the ui to reflect the new state
             inputBox.buttons = createButtons();
@@ -333,20 +332,25 @@ function activate(context) {
             // highlight current location in editor
         }),
         vscode.commands.registerCommand(COMMANDS.jumpWithLastSearch, () => {
-
             // check how often this is used, maybe pull it back out of getAll
             // const lastSearchTerm = getGlobalState(SETTING_NAMES.lastSearchTerm,undefined);
 
-            const { insertCursorBefore, selectToMatch, searchBackwards, lastSearchTerm } =
-            getAllGlobalState();
-            if (!lastSearchTerm){ return null }
+            const {
+                insertCursorLeft,
+                selectToMatch,
+                searchBackwards,
+                lastSearchTerm,
+            } = getAllGlobalState();
+            if (!lastSearchTerm) {
+                return null;
+            }
 
             Jump(
                 lastSearchTerm,
-                insertCursorBefore,
+                insertCursorLeft,
                 selectToMatch,
                 searchBackwards
-            )
+            );
         }),
         /*
 
@@ -362,7 +366,7 @@ function activate(context) {
 
     function Jump(
         searchTerm,
-        insertCursorBefore,
+        insertCursorLeft,
         selectToMatch,
         searchBackwards
     ) {
@@ -383,26 +387,47 @@ function activate(context) {
                 //   Searching Backwards
                 // -----------------------
 
+                // shift the cursor one char to prevent matching the first char repeatedly
+                const shiftedCursorPosition = document.positionAt(
+                    document.offsetAt(cursorPosition) - 1
+                );
 
                 var textToSearch = document.getText(
                     new vscode.Range(
                         // top of document
                         new vscode.Position(0, 0),
                         // to the cursor
-                        cursorPosition
+                        shiftedCursorPosition
                     )
                 );
+
                 textToSearch = [...textToSearch].reverse().join("");
                 const match = searchTermRegex.exec(textToSearch);
                 if (!match) {
                     return null;
                 }
+
+                // Calculate the actual position in the document
+                const matchOffset =
+                    document.offsetAt(shiftedCursorPosition) - match.index;
+
+                const matchPositionStart = document.positionAt(matchOffset);
+                const matchPositionEnd = document.positionAt(matchOffset - 1);
+
+                var matchRange = new vscode.Range(
+                    matchPositionStart,
+                    matchPositionEnd
+                );
+
+
             } else {
                 //   Searching Forwards
                 // ----------------------
 
                 // shift the cursor one char to prevent matching the first char repeatedly
-                const shiftedCursorPosition = document.positionAt(document.offsetAt(cursorPosition)+1);
+                const shiftedCursorPosition = document.positionAt(
+                    document.offsetAt(cursorPosition) + 1
+                );
 
                 const lastLine = document.lineCount - 1;
 
@@ -424,27 +449,27 @@ function activate(context) {
                 }
 
                 // Calculate the actual position in the document
-                const startOffset =
+                const matchOffset =
                     document.offsetAt(shiftedCursorPosition) + match.index;
-                const endOffset = startOffset + 1;
 
-                const startPos = document.positionAt(startOffset);
-                const endPos = document.positionAt(endOffset);
+                const matchPositionStart = document.positionAt(matchOffset);
+                const matchPositionEnd = document.positionAt(matchOffset + 1);
 
-                var matchRange = new vscode.Range(startPos, endPos);
+                var matchRange = new vscode.Range(
+                    matchPositionStart,
+                    matchPositionEnd
+                );
 
-                var newPosition = insertCursorBefore
-                    ? matchRange.start
-                    : matchRange.end;
             }
 
+            const newPosition = insertCursorLeft
+            ? matchRange.start
+            : matchRange.end;
 
-
-            // change this selection to include the old position if highlighting
-            // if jumping with a previous search the old position should be passed from the original search
-            // this will need to be stored in state
-
-            editor.selection = new vscode.Selection(selectToMatch ? cursorPosition : newPosition, newPosition);
+            editor.selection = new vscode.Selection(
+                selectToMatch ? cursorPosition : newPosition,
+                newPosition
+            );
 
             // make the reveal location editable from settings
             editor.revealRange(
