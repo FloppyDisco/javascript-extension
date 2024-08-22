@@ -333,10 +333,37 @@ function activate(context) {
         // |        Search Commands        |
         // |-------------------------------|
 
-        vscode.commands.registerCommand(COMMANDS.leap, () => {
+        vscode.commands.registerCommand(COMMANDS.leap, (args) => {
+
+            if(args){
+            //   command was called from keybinding
+            // --------------------------------------
+
+                if (args.searchTerm){
+                    leap(args)
+                    return;
+                } else {
+                    const {
+                        insertCursorLeft,
+                        selectToMatch,
+                        searchBackwards,
+                        revealRange,
+                        copyOnSelect
+                    } = args
+
+                    // update settings with any values from args
+                    updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft ? insertCursorLeft: false)
+                    updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch ? selectToMatch: false)
+                    updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards ? searchBackwards: false)
+                    updateGlobalState(SETTING_NAMES.revealRange, revealRange ? revealRange: false)
+                    updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect ? copyOnSelect: false)
+                    // update the UI
+                    inputBox.buttons = createButtons();
+                }
+            }
             inputBox.openBox();
-            // highlight current location in editor
         }),
+
         vscode.commands.registerCommand(COMMANDS.leapWithLastSearch, () => {
             // check how often this is used, maybe pull it back out of getAll
             // const lastSearchTerm = getGlobalState(SETTING_NAMES.lastSearchTerm,undefined);
@@ -400,11 +427,11 @@ function activate(context) {
 
     function leap({
         searchTerm,
-        insertCursorLeft,
-        selectToMatch,
-        searchBackwards,
-        revealRange,
-        copyOnSelect,
+        insertCursorLeft = false,
+        selectToMatch = false,
+        searchBackwards = false,
+        revealRange = false,
+        copyOnSelect = false,
         startingCursorPosition,
     }) {
 
