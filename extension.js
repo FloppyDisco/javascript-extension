@@ -70,10 +70,10 @@ const BUTTONS = {
 
 const HIGHLIGHTS = {
     green: vscode.window.createTextEditorDecorationType({
-        backgroundColor: "rgba(0,255,0,0.25)",
+        backgroundColor: "rgba(0,255,0,0.4)",
     }),
     red: vscode.window.createTextEditorDecorationType({
-        backgroundColor: "rgba(255,0,0,0.25)",
+        backgroundColor: "rgba(255,0,0,0.4)",
     }),
 };
 
@@ -377,12 +377,11 @@ function activate(context) {
 
             const cursorPosition = editor.selection.active;
 
-            if (!startingCursorPosition) {
-                updateGlobalState(
-                    SETTING_NAMES.startingCursorPosition,
-                    cursorPosition
-                );
-            }
+            // if highlighting and no starting position. save cursor
+            updateGlobalState(
+                SETTING_NAMES.startingCursorPosition,
+                selectToMatch && !startingCursorPosition ? cursorPosition: undefined
+            );
 
             if (searchBackwards) {
                 //   Searching Backwards
