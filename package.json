@@ -2,7 +2,7 @@
     "name": "frogger",
     "displayName": "frogger",
     "publisher": "Bluesteel Software",
-    "description": "jump cursor using single character searching line 'f' in vim",
+    "description": "leap cursor using single character searching line 'f' in vim",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.92.0"
@@ -17,8 +17,18 @@
     "contributes": {
         "keybindings": [
             {
+                "key": "cmd+l",
+                "command": "frogger.leap"
+            },
+            {
+                "key": "cmd+l",
+                "command": "frogger.leapWithLastSearch",
+                "when": "FroggerIsViewable"
+            },
+            {
                 "key": "cmd+j",
-                "command": "frogger.jump"
+                "command": "frogger.leapBackWithLastSearch",
+                "when": "FroggerIsViewable"
             },
             {
                 "key": "cmd+i",
@@ -26,53 +36,49 @@
                 "when": "FroggerIsViewable"
             },
             {
-                "key": "cmd+l",
+                "key": "cmd+h",
                 "command": "frogger.toggleSelectToMatch",
                 "when": "FroggerIsViewable"
             },
             {
-                "key": "cmd+k",
+                "key": "cmd+u",
                 "command": "frogger.toggleSearchBackwards",
                 "when": "FroggerIsViewable"
             },
             {
                 "key": "cmd+j",
                 "command": "-workbench.action.togglePanel"
+            },
+            {
+                "key": "cmd+l",
+                "command": "-expandLineSelection",
+                "when": "textInputFocus"
             }
         ],
         "commands": [
             {
-                "command": "frogger.jump",
-                "title": "Jump to character ..."
+                "command": "frogger.leap",
+                "title": "leap to character ..."
             },
             {
-                "command": "frogger.jumpWithLastSearch",
-                "title": "Jump again using the previous search character"
+                "command": "frogger.leapWithLastSearch",
+                "title": "leap again using the previous search character"
             }
         ],
         "configuration": {
             "type": "object",
             "title": "Frogger Settings",
             "properties": {
-                "frogger.insertCursorLeftByDefault": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable this to insert the cursor before the matched character by default"
-                },
-                "frogger.selectToMatchByDefault": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable this to select all from the current cursor position to the matched character by default"
-                },
-                "frogger.searchBackwardsByDefault": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable this to search from the cursor backwards by default"
-                },
-                "frogger.copyToClipboardOnSelect": {
+                "frogger.copyOnSelect": {
                     "type": "boolean",
                     "default": false,
                     "description": "Enable this to copy the selected value to the clipboard automatically when selectToMatch is used"
+                },
+                "frogger.revealRange": {
+                    "type": "string",
+                    "default": "Default",
+                    "enum": ["Default", "AtTop", "InCenter", "InCenterIfOutsideViewport"],
+                    "description": "Choose the location to reveal the match when leaping"
                 }
             }
         }
