@@ -257,7 +257,6 @@ function activate(context) {
 
             const {searchBackwards, insertCursorLeft} = getAllGlobalState();
 
-
             const startPosition = editor.selection.start;
             const endPosition = editor.document.positionAt(
                 editor.document.offsetAt(editor.selection.end)
@@ -392,7 +391,7 @@ function activate(context) {
                     document.offsetAt(cursorPosition) - 1
                 );
 
-                var textToSearch = document.getText(
+                let textToSearch = document.getText(
                     new vscode.Range(
                         // top of document
                         new vscode.Position(0, 0),
@@ -431,7 +430,7 @@ function activate(context) {
 
                 const lastLine = document.lineCount - 1;
 
-                var textToSearch = document.getText(
+                const textToSearch = document.getText(
                     new vscode.Range(
                         // from the shifted cursor
                         shiftedCursorPosition,
