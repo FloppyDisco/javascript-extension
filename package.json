@@ -54,7 +54,7 @@
             "type": "object",
             "title": "Frogger Settings",
             "properties": {
-                "frogger.insertCursorBeforeByDefault": {
+                "frogger.insertCursorLeftByDefault": {
                     "type": "boolean",
                     "default": false,
                     "description": "Enable this to insert the cursor before the matched character by default"
