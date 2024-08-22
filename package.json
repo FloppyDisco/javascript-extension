@@ -1,8 +1,8 @@
 {
-    "name": "frogger",
-    "displayName": "frogger",
+    "name": "Frogger",
+    "displayName": "Frogger",
     "publisher": "Bluesteel Software",
-    "description": "leap cursor using single character searching line 'f' in vim",
+    "description": "leap cursor using single character search, like 'f' in vim",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.92.0"
@@ -63,6 +63,10 @@
             {
                 "command": "frogger.leapWithLastSearch",
                 "title": "leap again using the previous search character"
+            },
+            {
+                "command": "frogger.leapBackWithLastSearch",
+                "title": "leap back using the previous search character"
             }
         ],
         "configuration": {
