@@ -366,15 +366,6 @@ function activate(context) {
         selectToMatch,
         searchBackwards
     ) {
-        // vscode.window.showInformationMessage(`jumping to ${searchTerm}`);
-        // console.log('settings:',);
-        // console.log('insertCursorBefore',insertCursorBefore);
-        // console.log('selectToMatch',selectToMatch);
-        // console.log('searchBackwards',searchBackwards);
-
-
-
-
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
@@ -392,8 +383,6 @@ function activate(context) {
                 //   Searching Backwards
                 // -----------------------
 
-                console.log('searching backwards',);
-
 
                 var textToSearch = document.getText(
                     new vscode.Range(
@@ -409,17 +398,11 @@ function activate(context) {
                     return null;
                 }
             } else {
-
-                console.log('searching forwards',);
-
                 //   Searching Forwards
                 // ----------------------
 
                 // shift the cursor one char to prevent matching the first char repeatedly
-                var shiftedCursorPosition = document.positionAt(document.offsetAt(cursorPosition)+1);
-
-                // console.log('cursorPosition',cursorPosition);
-                // console.log('shiftedCursorPosition',shiftedCursorPosition);
+                const shiftedCursorPosition = document.positionAt(document.offsetAt(cursorPosition)+1);
 
                 const lastLine = document.lineCount - 1;
 
@@ -435,40 +418,33 @@ function activate(context) {
                     )
                 );
 
-console.log('textToSearch',textToSearch);
-
-
-
-                var match = searchTermRegex.exec(textToSearch);
+                const match = searchTermRegex.exec(textToSearch);
                 if (!match) {
-                    console.log('no match',);
-
                     return null;
                 }
+
+                // Calculate the actual position in the document
+                const startOffset =
+                    document.offsetAt(shiftedCursorPosition) + match.index;
+                const endOffset = startOffset + 1;
+
+                const startPos = document.positionAt(startOffset);
+                const endPos = document.positionAt(endOffset);
+
+                var matchRange = new vscode.Range(startPos, endPos);
+
+                var newPosition = insertCursorBefore
+                    ? matchRange.start
+                    : matchRange.end;
             }
-            console.log('match',match);
-
-            // Calculate the actual position in the document
-            const startOffset =
-                document.offsetAt(shiftedCursorPosition) + match.index;
-            const endOffset = startOffset + 1;
-
-            const startPos = document.positionAt(startOffset);
-            const endPos = document.positionAt(endOffset);
-
-            const matchRange = new vscode.Range(startPos, endPos);
-
-            // highlight all matches
 
 
-            const newPosition = insertCursorBefore
-                ? matchRange.start
-                : matchRange.end;
 
             // change this selection to include the old position if highlighting
             // if jumping with a previous search the old position should be passed from the original search
             // this will need to be stored in state
-            editor.selection = new vscode.Selection(newPosition, newPosition);
+
+            editor.selection = new vscode.Selection(selectToMatch ? cursorPosition : newPosition, newPosition);
 
             // make the reveal location editable from settings
             editor.revealRange(
@@ -487,15 +463,6 @@ function setFroggerFocusContext(value) {
 }
 function createTooltip(buttonSettings, settingState) {
     return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
-}
-
-// fix this shit
-function highlightCurrentCharacter() {
-    const editor = vscode.window.activeTextEditor;
-    const cursorPosition = editor.selection.active;
-    const cursorOffset = editor.document.positionAt(cursorPosition);
-    const cursor = new vscode.Range(cursorOffset, cursorOffset + 1);
-    editor.selection = new vscode.Selection(cursor.start, cursor.end);
 }
 
 function deactivate() {}
