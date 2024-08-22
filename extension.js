@@ -11,6 +11,7 @@ const SETTING_NAMES = {
 };
 
 const COMMANDS = {
+    openBox: "frogger.openBox",
     toggleInsertCursor: "frogger.toggleInsertCursor",
     toggleSelectToMatch: "frogger.toggleSelectToMatch",
     toggleSearchBackwards: "frogger.toggleSearchBackwards",
@@ -98,6 +99,8 @@ function activate(context) {
     // |        create UI        |
     // |-------------------------|
 
+
+
     function createButtons() {
         const { insertCursorLeft, selectToMatch, searchBackwards } =
             getAllGlobalState();
@@ -131,6 +134,7 @@ function activate(context) {
             },
         ];
     }
+
 
     //   Input Box
     // -------------
@@ -199,11 +203,25 @@ function activate(context) {
         inputBox.prompt = `or leap to  ${searchTerm}  again!`;
     };
 
+    //   Status Bar
+    // --------------
+
+    const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 0);
+    statusBar.text = "🐸";
+    statusBar.tooltip = "Don't Forget to Frogger!"
+    statusBar.command = COMMANDS.openBox
+    statusBar.show();
+
     // |---------------------------|
     // |        UI Commands        |
     // |---------------------------|
 
     const commands = [
+
+        vscode.commands.registerCommand(COMMANDS.openBox, () => {
+            inputBox.openBox()
+        }),
+
         vscode.commands.registerCommand(COMMANDS.toggleInsertCursor, () => {
             // get the current global state and toggle the value
             const insertCursorLeft = getGlobalState(
