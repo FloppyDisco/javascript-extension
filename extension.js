@@ -36,11 +36,10 @@ const BUTTONS = {
             true: "triangle-left",
             false: "triangle-right",
         },
-        tip: {
-            true: "Insert Cursor Left",
-            false: "Insert Cursor Right",
+        tooltip: {
+            true: "Insert Cursor Left (⌘I)",
+            false: "Insert Cursor Right (⌘I)",
         },
-        key: "⌘I",
     },
     select: {
         id: "select",
@@ -48,11 +47,10 @@ const BUTTONS = {
             true: "pencil",
             false: "whole-word",
         },
-        tip: {
-            true: "Select to Match",
-            false: "Leap to Match",
+        tooltip: {
+            true: "Select to Match (⌘H)",
+            false: "Leap to Match (⌘H)",
         },
-        key: "⌘H",
     },
     searchBackwards: {
         id: "searchBackwards",
@@ -60,11 +58,10 @@ const BUTTONS = {
             true: "arrow-left",
             false: "arrow-right",
         },
-        tip: {
-            true: "Search Backwards",
-            false: "Search Forwards",
+        tooltip: {
+            true: "Search Backwards (⌘U)",
+            false: "Search Forwards (⌘U)",
         },
-        key: "⌘U",
     },
 };
 
@@ -111,24 +108,21 @@ function activate(context) {
                 iconPath: new vscode.ThemeIcon(
                     BUTTONS.searchBackwards.icons[searchBackwards]
                 ),
-                tooltip: createTooltip(
-                    BUTTONS.searchBackwards,
-                    searchBackwards
-                ),
+                tooltip: BUTTONS.searchBackwards.tooltip[searchBackwards],
             },
             {
                 id: BUTTONS.insert.id,
                 iconPath: new vscode.ThemeIcon(
                     BUTTONS.insert.icons[insertCursorLeft]
                 ),
-                tooltip: createTooltip(BUTTONS.insert, insertCursorLeft),
+                tooltip: BUTTONS.insert.tooltip[insertCursorLeft],
             },
             {
                 id: BUTTONS.select.id,
                 iconPath: new vscode.ThemeIcon(
                     BUTTONS.select.icons[selectToMatch]
                 ),
-                tooltip: createTooltip(BUTTONS.select, selectToMatch),
+                tooltip: BUTTONS.select.tooltip[selectToMatch],
             },
             {
                 id: BUTTONS.close.id,
@@ -248,7 +242,6 @@ function activate(context) {
         // |-------------------------------|
 
         vscode.commands.registerCommand(COMMANDS.leap, (args) => {
-
             if (args) {
                 //   command was called from keybinding
 
@@ -367,7 +360,6 @@ function activate(context) {
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
-
             // escape any regex special characters
             searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             // create regex to search for
@@ -380,7 +372,9 @@ function activate(context) {
             // if highlighting and no starting position. save cursor
             updateGlobalState(
                 SETTING_NAMES.startingCursorPosition,
-                selectToMatch && !startingCursorPosition ? cursorPosition: undefined
+                selectToMatch && !startingCursorPosition
+                    ? cursorPosition
+                    : undefined
             );
 
             if (searchBackwards) {
@@ -480,7 +474,7 @@ function activate(context) {
             );
         }
     }
-/*
+    /*
 
 
 
@@ -522,11 +516,9 @@ function activate(context) {
         };
     }
     function highlightCurrentSelection() {
-
         // highlight the current position in the editor for clarity
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-
             // clear previous highlighting
             editor.setDecorations(HIGHLIGHTS.green, []);
 
@@ -549,10 +541,7 @@ function activate(context) {
     function setFroggerFocusContext(value) {
         return setWhenContext(CONTEXTS.froggerIsViewable, value);
     }
-    function createTooltip(buttonSettings, settingState) {
-        return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
-    }
-/*
+    /*
 
 
 */
