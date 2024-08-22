@@ -1,10 +1,5 @@
 const vscode = require("vscode");
 
-/*
-settings.json
-	"frogger.copyToClipboardOnSelect"
-*/
-
 const SETTING_NAMES = {
     insertCursorLeft: "frogger.insertCursorLeft",
     selectToMatch: "frogger.selectToMatch",
@@ -191,14 +186,12 @@ function activate(context) {
     });
 
     inputBox.onDidAccept(() => {
-        // leap with the previous search term
         vscode.commands.executeCommand(COMMANDS.leapWithLastSearch);
     });
 
     inputBox.onDidHide(() => {
         inputBox.value = "";
         setFroggerFocusContext(undefined);
-        inputBox.hide();
         vscode.window.activeTextEditor?.setDecorations(HIGHLIGHTS.green, []);
     });
 
@@ -255,9 +248,9 @@ function activate(context) {
         // |-------------------------------|
 
         vscode.commands.registerCommand(COMMANDS.leap, (args) => {
+
             if (args) {
                 //   command was called from keybinding
-                // --------------------------------------
 
                 if (args.searchTerm) {
                     leap(args);
@@ -300,8 +293,6 @@ function activate(context) {
         }),
 
         vscode.commands.registerCommand(COMMANDS.leapWithLastSearch, () => {
-            // check how often this is used, maybe pull it back out of getAll
-            // const lastSearchTerm = getGlobalState(SETTING_NAMES.lastSearchTerm,undefined);
             const {
                 insertCursorLeft,
                 selectToMatch,
@@ -376,6 +367,7 @@ function activate(context) {
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
+
             // escape any regex special characters
             searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             // create regex to search for
@@ -489,10 +481,11 @@ function activate(context) {
             );
         }
     }
+/*
 
 
 
-
+*/
     function updateGlobalState(settingName, value) {
         context.globalState.update(settingName, value);
     }
@@ -550,20 +543,21 @@ function activate(context) {
             editor.setDecorations(HIGHLIGHTS.green, [range]);
         }
     }
-    /*
 
-    */
+    function setWhenContext(key, value) {
+        return vscode.commands.executeCommand("setContext", key, value);
+    }
+    function setFroggerFocusContext(value) {
+        return setWhenContext(CONTEXTS.froggerIsViewable, value);
+    }
+    function createTooltip(buttonSettings, settingState) {
+        return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
+    }
+/*
+
+
+*/
 } // end of activate()
-
-function setWhenContext(key, value) {
-    return vscode.commands.executeCommand("setContext", key, value);
-}
-function setFroggerFocusContext(value) {
-    return setWhenContext(CONTEXTS.froggerIsViewable, value);
-}
-function createTooltip(buttonSettings, settingState) {
-    return `${buttonSettings.tip[settingState]} (${buttonSettings.key})`;
-}
 
 function deactivate() {}
 
