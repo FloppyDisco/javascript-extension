@@ -8,6 +8,7 @@ const SETTING_NAMES = {
     revealRange: "frogger.revealRange",
     lastSearchTerm: "frogger.lastSearchTerm",
     startingCursorPosition: "frogger.startingCursorPosition",
+    repeatSearchTimeout: "frogger.repeatSearchTimeout"
 };
 
 const COMMANDS = {
@@ -23,6 +24,7 @@ const COMMANDS = {
 
 const CONTEXTS = {
     froggerIsViewable: "FroggerIsViewable",
+    recentLeap: "FroggerJustLeaped",
 };
 
 const BUTTONS = {
@@ -74,6 +76,9 @@ const HIGHLIGHTS = {
         backgroundColor: "rgba(255,0,0,0.4)",
     }),
 };
+
+let settingsTimer;
+let whenContextTimer;
 
 function activate(context) {
     // |-------------------------|
@@ -195,11 +200,15 @@ function activate(context) {
 
     inputBox.openBox = () => {
         setFroggerFocusContext(true);
+        if (settingsTimer){
+            const [timer, previousSettings] = settingsTimer
+            clearTimeout(timer);
+            updateAllGlobalState(previousSettings);
+        }
         inputBox.show();
     };
 
     inputBox.updatePrompt = (searchTerm) => {
-        updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm);
         inputBox.prompt = `or leap to  ${searchTerm}  again!`;
     };
 
@@ -260,14 +269,29 @@ function activate(context) {
         // |-------------------------------|
 
         vscode.commands.registerCommand(COMMANDS.leap, (args) => {
-            if (args) {
+            if (!args){
+                inputBox.openBox()
+
+            } else {
                 //   command was called from keybinding
 
-                if (args.searchTerm) {
-                    leap(args);
-                    return;
-                } else {
-                    const {
+
+                // check to see if a timer is going.
+                // cancel it, but do not change the settings values
+                // if no timer store the settings values
+                let settingsBeforeArgs;
+                if (settingsTimer ){
+                    const [timer, previousSettings] = settingsTimer
+
+                    clearTimeout(timer);
+
+                    settingsBeforeArgs = previousSettings;
+                } else{
+                    settingsBeforeArgs = getAllGlobalState();
+                }
+
+                const {
+                        searchTerm,
                         insertCursorLeft,
                         selectToMatch,
                         searchBackwards,
@@ -298,9 +322,18 @@ function activate(context) {
                     );
                     // update the UI
                     inputBox.buttons = createButtons();
+
+                if (searchTerm) {
+
+                    leap(args);
+
+                    settingsBeforeArgs.lastSearchTerm = searchTerm;
+                    resetSettingsAfterTimeout(settingsBeforeArgs);
+
+                } else {
+                    inputBox.openBox();
                 }
             }
-            inputBox.openBox();
         }),
 
         vscode.commands.registerCommand(COMMANDS.leapWithLastSearch, () => {
@@ -379,8 +412,9 @@ function activate(context) {
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
-
             if (!useRegex){
+                // save the search term in state
+                updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm);
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             }
@@ -432,6 +466,7 @@ function activate(context) {
 
                 matchPositionStart = document.positionAt(matchOffset);
                 matchPositionEnd = document.positionAt(matchOffset - 1);
+
             } else {
                 //   Searching Forwards
                 // ----------------------
@@ -469,6 +504,7 @@ function activate(context) {
             }
 
             // create selection in doc from match position.
+
             const matchRange = new vscode.Range(
                 matchPositionStart,
                 matchPositionEnd
@@ -497,6 +533,9 @@ function activate(context) {
                 matchRange,
                 vscode.TextEditorRevealType[revealRange]
             );
+
+            setRecentLeapContext(true);
+            cancelRecentLeapContextAfterTimeout();
         }
     }
     /*
@@ -540,6 +579,38 @@ function activate(context) {
                 .get(SETTING_NAMES.copyOnSelect, "Default"),
         };
     }
+    function updateAllGlobalState ({
+        insertCursorLeft,
+        selectToMatch,
+        searchBackwards,
+        lastSearchTerm,
+        startingCursorPosition,
+        revealRange,
+        copyOnSelect
+    }){
+        if (insertCursorLeft !== undefined){
+            updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
+        }
+        if (selectToMatch !== undefined){
+            updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
+        }
+        if (searchBackwards !== undefined){
+            updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
+        }
+        if (copyOnSelect !== undefined){
+            updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
+        }
+        if (revealRange !== undefined){
+            updateGlobalState(SETTING_NAMES.revealRange, revealRange);
+        }
+        if (lastSearchTerm !== undefined){
+            updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
+        }
+        if (startingCursorPosition !== undefined){
+            updateGlobalState(SETTING_NAMES.startingCursorPosition, startingCursorPosition);
+        }
+        inputBox.buttons = createButtons();
+    }
     function highlightCurrentSelection() {
         // highlight the current position in the editor for clarity
         const editor = vscode.window.activeTextEditor;
@@ -566,7 +637,33 @@ function activate(context) {
     function setFroggerFocusContext(value) {
         return setWhenContext(CONTEXTS.froggerIsViewable, value);
     }
-    /*
+    function setRecentLeapContext(value) {
+        if (whenContextTimer){
+            clearTimeout(whenContextTimer);
+        }
+        return setWhenContext(CONTEXTS.recentLeap, value)
+    }
+    function callAfterTimeout(func){
+        const timeout = vscode.workspace
+            .getConfiguration()
+            .get(SETTING_NAMES.repeatSearchTimeout,1000);
+
+        return setTimeout(func, timeout);
+    }
+    function resetSettingsAfterTimeout(previousSettings){
+        settingsTimer = [
+            callAfterTimeout(() => {
+            updateAllGlobalState(previousSettings);
+        }),
+         previousSettings
+        ]
+    }
+    function cancelRecentLeapContextAfterTimeout(){
+        whenContextTimer = callAfterTimeout(() => {
+            setRecentLeapContext(undefined);
+        })
+    }
+/*
 
 
 */
