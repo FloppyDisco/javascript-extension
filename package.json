@@ -2,7 +2,7 @@
     "name": "Frogger",
     "displayName": "Frogger",
     "publisher": "Bluesteel Software",
-    "description": "leap cursor using single character search, like 'f' in vim",
+    "description": "Leap cursor using single character search, similar to 'f' in vim",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.92.0"
@@ -67,6 +67,18 @@
             {
                 "command": "frogger.leapBackWithLastSearch",
                 "title": "leap back using the previous search character"
+            },
+            {
+                "command": "frogger.toggleInsertCursor",
+                "title": "Toggle Insert Cursor Position"
+            },
+            {
+                "command": "frogger.toggleSelectToMatch",
+                "title": "Toggle Select to Match"
+            },
+            {
+                "command": "frogger.toggleSearchBackwards",
+                "title": "Toggle Search Backwards"
             }
         ],
         "configuration": {
@@ -81,8 +93,18 @@
                 "frogger.revealRange": {
                     "type": "string",
                     "default": "Default",
-                    "enum": ["Default", "AtTop", "InCenter", "InCenterIfOutsideViewport"],
+                    "enum": [
+                        "Default",
+                        "AtTop",
+                        "InCenter",
+                        "InCenterIfOutsideViewport"
+                    ],
                     "description": "Choose the location to reveal the match when leaping"
+                },
+                "frogger.repeatSearchTimeout": {
+                    "type": "integer",
+                    "default": 3000,
+                    "description": "Set the length of time the 'CanLeapAgain' when clause is active"
                 }
             }
         }
