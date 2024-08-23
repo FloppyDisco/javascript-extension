@@ -1,65 +1,99 @@
-# javascript-extension README
+# Frogger
 
-This is the README for your extension "javascript-extension". After writing up a brief description, we recommend including the following sections.
+**Frogger** is a VSCode extension that allows you to leap your cursor using single character search, similar to the 'f' command in Vim. This extension provides quick and efficient navigation through your code by jumping directly to a specific character.
 
-## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-For example if there is an image subfolder under your extension project workspace:
+## Usage
 
-\!\[feature X\]\(images/feature-x.png\)
+### Keybindings
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+The following keybindings are available:
 
-## Requirements
+- `cmd+l`: Leap to a character (default keybinding).
+- `cmd+l`: Leap with the last search character (when the Frogger input box is viewable).
+- `cmd+j`: Leap back with the last search character (when the Frogger input box is viewable).
+- `cmd+u`: Toggle Search Backwards (when the Frogger input box is viewable).
+- `cmd+i`: Toggle Insert Cursor position (when the Frogger input box is viewable).
+- `cmd+o`: Toggle Select to Match (when the Frogger input box is viewable).
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### Features
 
-## Extension Settings
+- **Leap to a Specific Character**
+- **Leap Backwards or Forwards**
+- **Cursor Position**: Choose to insert the cursor to the left or right of the matched character.
+- **Selection**: Select all text from the current cursor position to the matched character.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### Commands
 
-For example:
+### `frogger.leap`
 
-This extension contributes the following settings:
+Leap the cursor to the next occurrence of the specified character. This command can be invoked through the command palette or keybindings, when using a keybinding, arguments may be supplied.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- **Arguments**:
+all arguments are **optional**
+  - `searchTerm`: (string) The character to search for.
+  - `insertCursorLeft`: (boolean) If true, the cursor is placed to the left of the match. Default is `false`.
+  - `selectToMatch`: (boolean) If true, selects the text from the current cursor position to the match. Default is `false`.
+  - `searchBackwards`: (boolean) If true, searches backwards from the cursor position. Default is `false`.
+  - `revealRange`: (string) The reveal type for the match, can be "Default", "AtTop", "InCenter", "InCenterIfOutsideViewport". Default is `"Default"`.
+  - `copyOnSelect`: (boolean) If true, automatically copies the selected text to the clipboard. Default is `false`.
+  - `useRegex`: (boolean) If true, treats the search term as a regular expression. Default is `false`.
 
-## Known Issues
+### a note on arguments:
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+arguments are a very powerful tool. The possibilities are endless. especially when using this extensions in conjuction with another tool like "Commands" which allows you to run a sequence of cmmands with arguments with one key press.
 
-## Release Notes
+if the searchTerm argument is provided, the leap command will be called WITHOUT opening the input box.
 
-Users appreciate release notes as you update your extension.
+if the searchTerm argument is not provided, the selected arguments will be applied and the input box will open arking for a searchTerm,
+this allows you to customize the behavior of leap to your liking! if you want to select all text while leaping by default, just set the argument in the keybinding.
 
-### 1.0.0
+useRegex is a special feature that is only available when using leap through a keybinding. this allows you to provide a regular expression as the searchTerm.
+- all searchTerm special characters will be escaped unless this flag is true
+- to write a regular expression token inside json, the backslash must be escaped in the json, so `"\d"` becomes `"\\d"`
 
-Initial release of ...
 
-### 1.0.1
+### `frogger.leapWithLastSearch`
 
-Fixed issue #.
+Leaps the cursor using the previously used search term.
 
-### 1.1.0
+### `frogger.leapBackWithLastSearch`
 
-Added features X, Y, and Z.
+Leaps the cursor backwards using the previously used search term.
 
----
+### `frogger.toggleInsertCursor`
 
-## Working with Markdown
+Toggles the `insertCursorLeft` setting, which controls whether the cursor is inserted to the left or right of the matched character.
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+### `frogger.toggleSelectToMatch`
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
+Toggles the `selectToMatch` setting, which controls whether text is selected from the current cursor position to the matched character.
 
-## For more information
+### `frogger.toggleSearchBackwards`
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+Toggles the `searchBackwards` setting, which controls the direction of the search.
 
-**Enjoy!**
+## Settings
+
+Frogger includes several customizable settings:
+
+### `frogger.copyOnSelect`
+- **Type**: `boolean`
+- **Default**: `false`
+- **Description**: When enabled, the selected value is automatically copied to the clipboard when `selectToMatch` is used.
+
+### `frogger.revealRange`
+- **Type**: `string`
+- **Default**: `Default`
+- **Enum**: ["Default", "AtTop", "InCenter", "InCenterIfOutsideViewport"]
+- **Description**: Determines how the editor reveals the match when leaping.
+
+### `frogger.repeatSearchTimeout`
+- **Type**: `integer`
+- **Default**: `3000`
+- **Description**: Sets the length of time (in milliseconds) the `CanLeapAgain` context is active after a leap.
+
+## License
+
+This extension is licensed under the [MIT License](LICENSE).
