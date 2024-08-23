@@ -374,13 +374,16 @@ function activate(context) {
         revealRange = false,
         copyOnSelect = false,
         startingCursorPosition,
+        useRegex = false,
     }) {
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
-            // escape any regex special characters
-            searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            // create regex to search for
+
+            if (!useRegex){
+                // escape any regex special characters
+                searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            }
             const searchTermRegex = new RegExp(searchTerm, "g");
 
             const document = editor.document;
