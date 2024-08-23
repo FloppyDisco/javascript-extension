@@ -42,15 +42,55 @@ all arguments are **optional**
 
 ### a note on arguments:
 
-arguments are a very powerful tool. The possibilities are endless. especially when using this extensions in conjuction with another tool like "Commands" which allows you to run a sequence of cmmands with arguments with one key press.
 
 if the searchTerm argument is provided, the leap command will be called WITHOUT opening the input box.
 
-if the searchTerm argument is not provided, the selected arguments will be applied and the input box will open arking for a searchTerm,
+if the searchTerm argument is not provided, the selected arguments will be applied and the input box will open.
 this allows you to customize the behavior of leap to your liking! if you want to select all text while leaping by default, just set the argument in the keybinding.
 
-useRegex is a special feature that is only available when using leap through a keybinding. this allows you to provide a regular expression as the searchTerm.
-- all searchTerm special characters will be escaped unless this flag is true
+arguments are a very powerful tool. The possibilities are endless. especially when using this extensions in conjuction with another tool like "Commands" which allows you to run a sequence of cmmands with arguments with one key press.
+here is a snippet of how you can create a keybinding to copy the function parameters in the declaration line
+
+```
+
+// settings.json
+
+"commands.commands":{
+        "frogger.selectParams": {
+            "sequence": [
+                {
+                    "command": "frogger.leap",
+                    "args": {
+                        "searchTerm": ")",
+                        "insertCursorLeft": true,
+                    }
+                },
+                {
+                    "command": "frogger.leap",
+                    "args": {
+                        "searchTerm": "(",
+                        "searchBackwards": true,
+                        "insertCursorLeft": false,
+                        "selectToMatch": true,
+                        "copyOnSelect": true,
+                    }
+                }
+            ]
+        }
+    }
+
+// keybindings.json
+[
+    {
+        "key": "cmd+shift+9",
+        "command": "frogger.selectParams"
+    },
+    ...
+]
+```
+
+`useRegex` is a special feature that is only available when using leap through a keybinding.
+- if useRegex is set to true, the searchTerm will be treated as a regular expression
 - to write a regular expression token inside json, the backslash must be escaped in the json, so `"\d"` becomes `"\\d"`
 
 
