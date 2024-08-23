@@ -398,6 +398,10 @@ function activate(context) {
                     : undefined
             );
 
+
+            let matchPositionStart;
+            let matchPositionEnd;
+
             if (searchBackwards) {
                 //   Searching Backwards
                 // -----------------------
@@ -426,8 +430,8 @@ function activate(context) {
                 const matchOffset =
                     document.offsetAt(shiftedCursorPosition) - match.index;
 
-                var matchPositionStart = document.positionAt(matchOffset);
-                var matchPositionEnd = document.positionAt(matchOffset - 1);
+                matchPositionStart = document.positionAt(matchOffset);
+                matchPositionEnd = document.positionAt(matchOffset - 1);
             } else {
                 //   Searching Forwards
                 // ----------------------
@@ -460,8 +464,8 @@ function activate(context) {
                 const matchOffset =
                     document.offsetAt(shiftedCursorPosition) + match.index;
 
-                var matchPositionStart = document.positionAt(matchOffset);
-                var matchPositionEnd = document.positionAt(matchOffset + 1);
+                matchPositionStart = document.positionAt(matchOffset);
+                matchPositionEnd = document.positionAt(matchOffset + 1);
             }
 
             // create selection in doc from match position.
