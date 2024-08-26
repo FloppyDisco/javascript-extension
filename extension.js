@@ -178,7 +178,7 @@ function activate(context) {
     });
 
     inputBox.onDidAccept(() => {
-        vscode.commands.executeCommand(COMMANDS.leapWithLastSearch);
+        vscode.commands.executeCommand(COMMANDS.leapForwardPreviousSearch);
     });
 
     inputBox.onDidHide(() => {
