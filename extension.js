@@ -458,6 +458,9 @@ function activate(context) {
             );
 
             setRecentLeapContext(true);
+            statusBar.backgroundColor = new vscode.ThemeColor(
+                "statusBarItem.warningBackground"
+            );
             cancelRecentLeapContextAfterTimeout();
         }
     }
@@ -567,22 +570,27 @@ function activate(context) {
         return setWhenContext(CONTEXTS.froggerIsViewable, value);
     }
     function setRecentLeapContext(value) {
-        if (whenContextTimer){
+        if (whenContextTimer) {
             clearTimeout(whenContextTimer);
         }
-        return setWhenContext(CONTEXTS.recentLeap, value)
+        return setWhenContext(CONTEXTS.recentLeap, value);
     }
 
-    function cancelRecentLeapContextAfterTimeout(){
+    function cancelRecentLeapContextAfterTimeout() {
         const timeout = vscode.workspace
             .getConfiguration()
-            .get(SETTING_NAMES.repeatSearchTimeout,1500);
+            .get(SETTING_NAMES.repeatSearchTimeout, 1500);
 
         whenContextTimer = setTimeout(() => {
-            console.log('cancelling when context',);
-
+            // clear status bar background
+            statusBar.backgroundColor = "";
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                // clear any highlighting
+                editor.setDecorations(HIGHLIGHTS.green, []);
+            }
             setRecentLeapContext(undefined);
-        }, timeout)
+        }, timeout);
     }
 /*
 
