@@ -6,7 +6,7 @@ const SETTING_NAMES = {
     searchBackwards: "frogger.searchBackwards",
     copyOnSelect: "frogger.copyOnSelect",
     revealRange: "frogger.revealRange",
-    lastSearchTerm: "frogger.lastSearchTerm",
+    previousLeap: "frogger.previousLeap",
     startingCursorPosition: "frogger.startingCursorPosition",
     repeatSearchTimeout: "frogger.repeatSearchTimeout"
 };
@@ -96,8 +96,8 @@ function activate(context) {
     // ----------------------------
     updateGlobalState(SETTING_NAMES.searchBackwards, false);
 
-    // make sure last search term is not set
-    updateGlobalState(SETTING_NAMES.lastSearchTerm, false);
+    // make sure previousLeap is not set
+    updateGlobalState(SETTING_NAMES.previousLeap, false);
 
     // |-------------------------|
     // |        create UI        |
@@ -259,61 +259,30 @@ function activate(context) {
             } else {
                 //   command was called from keybinding
 
+                // let settingsBeforeArgs;
+                // if (settingsTimer){
+                //     const [timer, previousSettings] = settingsTimer
 
-                // check to see if a timer is going.
-                // cancel it, but do not change the settings values
-                // if no timer store the settings values
-                let settingsBeforeArgs;
-                if (settingsTimer ){
-                    const [timer, previousSettings] = settingsTimer
+                //     clearTimeout(timer);
+                //     settingsBeforeArgs = previousSettings;
+                // } else{
+                //     settingsBeforeArgs = getAllGlobalState();
+                // }
 
-                    clearTimeout(timer);
 
-                    settingsBeforeArgs = previousSettings;
-                } else{
-                    settingsBeforeArgs = getAllGlobalState();
-                }
+                    // // update the UI
+                    // inputBox.buttons = createButtons();
 
-                const {
-                        searchTerm,
-                        insertCursorLeft,
-                        selectToMatch,
-                        searchBackwards,
-                        revealRange,
-                        copyOnSelect,
-                    } = args;
-
-                    // update settings with any values from args
-                    updateGlobalState(
-                        SETTING_NAMES.insertCursorLeft,
-                        insertCursorLeft ? insertCursorLeft : false
-                    );
-                    updateGlobalState(
-                        SETTING_NAMES.selectToMatch,
-                        selectToMatch ? selectToMatch : false
-                    );
-                    updateGlobalState(
-                        SETTING_NAMES.searchBackwards,
-                        searchBackwards ? searchBackwards : false
-                    );
-                    updateGlobalState(
-                        SETTING_NAMES.revealRange,
-                        revealRange ? revealRange : false
-                    );
-                    updateGlobalState(
-                        SETTING_NAMES.copyOnSelect,
-                        copyOnSelect ? copyOnSelect : false
-                    );
-                    // update the UI
-                    inputBox.buttons = createButtons();
-
-                if (searchTerm) {
+                if (args.searchTerm) {
 
                     leap(args);
 
                     // resetSettingsAfterTimeout(settingsBeforeArgs);
 
                 } else {
+
+                    // update the UI for this jump using args
+
                     inputBox.openBox();
                 }
             }
@@ -392,12 +361,25 @@ function activate(context) {
         startingCursorPosition,
         useRegex = false,
     }) {
+
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
+
+            // save the search term in state
+            const configs = {
+                searchTerm,
+                insertCursorLeft,
+                selectToMatch,
+                searchBackwards,
+                revealRange,
+                copyOnSelect,
+                startingCursorPosition,
+                useRegex,
+            }
+            updateGlobalState(SETTING_NAMES.previousLeap, configs)
+
             if (!useRegex){
-                // save the search term in state
-                updateGlobalState(SETTING_NAMES.lastSearchTerm, searchTerm);
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             }
@@ -521,11 +503,31 @@ function activate(context) {
             cancelRecentLeapContextAfterTimeout();
         }
     }
-    /*
+    function highlightCurrentSelection() {
+        // highlight the current position in the editor for clarity
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            // clear previous highlighting
+            editor.setDecorations(HIGHLIGHTS.green, []);
+
+            const { searchBackwards, insertCursorLeft } = getAllGlobalState();
+
+            const range = new vscode.Range(
+                editor.selection.start,
+                editor.document.positionAt(
+                    editor.document.offsetAt(editor.selection.end) +
+                        (insertCursorLeft ? 1 : -1)
+                )
+            );
+            editor.setDecorations(HIGHLIGHTS.green, [range]);
+        }
+    }
 
 
+    // |-------------------------------|
+    // |        State Functions        |
+    // |-------------------------------|
 
-*/
     function updateGlobalState(settingName, value) {
         context.globalState.update(settingName, value);
     }
@@ -546,7 +548,7 @@ function activate(context) {
                 false
             ),
 
-            lastSearchTerm: getGlobalState(SETTING_NAMES.lastSearchTerm, false),
+            previousLeap: getGlobalState(SETTING_NAMES.previousLeap, false),
 
             startingCursorPosition: getGlobalState(
                 SETTING_NAMES.startingCursorPosition,
@@ -562,57 +564,43 @@ function activate(context) {
                 .get(SETTING_NAMES.copyOnSelect, "Default"),
         };
     }
-    function updateAllGlobalState ({
-        insertCursorLeft,
-        selectToMatch,
-        searchBackwards,
-        lastSearchTerm,
-        startingCursorPosition,
-        revealRange,
-        copyOnSelect
-    }){
-        if (insertCursorLeft !== undefined){
-            updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
-        }
-        if (selectToMatch !== undefined){
-            updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
-        }
-        if (searchBackwards !== undefined){
-            updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
-        }
-        if (copyOnSelect !== undefined){
-            updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
-        }
-        if (revealRange !== undefined){
-            updateGlobalState(SETTING_NAMES.revealRange, revealRange);
-        }
-        if (lastSearchTerm !== undefined){
-            updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
-        }
-        if (startingCursorPosition !== undefined){
-            updateGlobalState(SETTING_NAMES.startingCursorPosition, startingCursorPosition);
-        }
-        inputBox.buttons = createButtons();
-    }
-    function highlightCurrentSelection() {
-        // highlight the current position in the editor for clarity
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            // clear previous highlighting
-            editor.setDecorations(HIGHLIGHTS.green, []);
 
-            const { searchBackwards, insertCursorLeft } = getAllGlobalState();
+    // function updateAllGlobalState ({
+    //     insertCursorLeft,
+    //     selectToMatch,
+    //     searchBackwards,
+    //     lastSearchTerm,
+    //     startingCursorPosition,
+    //     revealRange,
+    //     copyOnSelect
+    // }){
+    //     if (insertCursorLeft !== undefined){
+    //         updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
+    //     }
+    //     if (selectToMatch !== undefined){
+    //         updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
+    //     }
+    //     if (searchBackwards !== undefined){
+    //         updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
+    //     }
+    //     if (copyOnSelect !== undefined){
+    //         updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
+    //     }
+    //     if (revealRange !== undefined){
+    //         updateGlobalState(SETTING_NAMES.revealRange, revealRange);
+    //     }
+    //     if (lastSearchTerm !== undefined){
+    //         updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
+    //     }
+    //     if (startingCursorPosition !== undefined){
+    //         updateGlobalState(SETTING_NAMES.startingCursorPosition, startingCursorPosition);
+    //     }
+    //     inputBox.buttons = createButtons();
+    // }
 
-            const range = new vscode.Range(
-                editor.selection.start,
-                editor.document.positionAt(
-                    editor.document.offsetAt(editor.selection.end) +
-                        (insertCursorLeft ? 1 : -1)
-                )
-            );
-            editor.setDecorations(HIGHLIGHTS.green, [range]);
-        }
-    }
+    // |--------------------------------|
+    // |        Context Funtions        |
+    // |--------------------------------|
 
     function setWhenContext(key, value) {
         return vscode.commands.executeCommand("setContext", key, value);
