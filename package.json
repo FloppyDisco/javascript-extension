@@ -2,10 +2,11 @@
     "name": "Frogger",
     "displayName": "Frogger",
     "publisher": "bs-code",
+    "repository": "https://github.com/FloppyDisco/frogger",
     "description": "Leap cursor using single character search, similar to 'f' in vim",
     "version": "0.0.1",
     "engines": {
-        "vscode": "^1.92.0"
+        "vscode": "^1.91.0"
     },
     "categories": [
         "Other"
@@ -36,7 +37,7 @@
                 "when": "FroggerIsViewable"
             },
             {
-                "key": "cmd+h",
+                "key": "cmd+o",
                 "command": "frogger.toggleSelectToMatch",
                 "when": "FroggerIsViewable"
             },
@@ -115,7 +116,7 @@
         "test": "vscode-test"
     },
     "devDependencies": {
-        "@types/vscode": "^1.92.0",
+        "@types/vscode": "^1.91.0",
         "@types/mocha": "^10.0.7",
         "@types/node": "20.x",
         "eslint": "^8.57.0",
