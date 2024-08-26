@@ -8,7 +8,7 @@ const SETTING_NAMES = {
     revealRange: "frogger.revealRange",
     previousLeap: "frogger.previousLeap",
     startingCursorPosition: "frogger.startingCursorPosition",
-    repeatSearchTimeout: "frogger.repeatSearchTimeout"
+    repeatSearchTimeout: "frogger.repeatSearchTimeout",
 };
 
 const COMMANDS = {
@@ -97,13 +97,13 @@ function activate(context) {
     updateGlobalState(SETTING_NAMES.searchBackwards, false);
 
     // make sure previousLeap is not set
-    updateGlobalState(SETTING_NAMES.previousLeap, false);
+    updateGlobalState(SETTING_NAMES.previousLeap, {});
+
+    updateGlobalState(SETTING_NAMES.startingCursorPosition, undefined);
 
     // |-------------------------|
     // |        create UI        |
     // |-------------------------|
-
-
 
     function createButtons() {
         const { insertCursorLeft, selectToMatch, searchBackwards } =
@@ -139,7 +139,6 @@ function activate(context) {
         ];
     }
 
-
     //   Input Box
     // -------------
 
@@ -172,8 +171,11 @@ function activate(context) {
         const configs = {
             searchTerm,
             ...getAllGlobalState(),
-        }
+        };
+
+        updateGlobalState(SETTING_NAMES.startingCursorPosition, undefined);
         leap(configs);
+        updateGlobalState(SETTING_NAMES.previousLeap, configs);
         inputBox.updatePrompt(searchTerm);
     });
 
@@ -199,10 +201,13 @@ function activate(context) {
     //   Status Bar
     // --------------
 
-    const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 0);
+    const statusBar = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        0
+    );
     statusBar.text = "🐸";
-    statusBar.tooltip = "Don't Forget to Frogger!"
-    statusBar.command = COMMANDS.openBox
+    statusBar.tooltip = "Don't Forget to Frogger!";
+    statusBar.command = COMMANDS.openBox;
     statusBar.show();
 
     // |---------------------------|
@@ -210,9 +215,8 @@ function activate(context) {
     // |---------------------------|
 
     const commands = [
-
         vscode.commands.registerCommand(COMMANDS.openBox, () => {
-            inputBox.openBox()
+            inputBox.openBox();
         }),
 
         vscode.commands.registerCommand(COMMANDS.toggleInsertCursor, () => {
@@ -253,47 +257,31 @@ function activate(context) {
         // |-------------------------------|
 
         vscode.commands.registerCommand(COMMANDS.leap, (args) => {
-            if (!args){
-                inputBox.openBox()
-
-            } else {
+            if (args) {
                 //   command was called from keybinding
-
-                // let settingsBeforeArgs;
-                // if (settingsTimer){
-                //     const [timer, previousSettings] = settingsTimer
-
-                //     clearTimeout(timer);
-                //     settingsBeforeArgs = previousSettings;
-                // } else{
-                //     settingsBeforeArgs = getAllGlobalState();
-                // }
-
-
-                    // // update the UI
-                    // inputBox.buttons = createButtons();
-
-                if (args.searchTerm) {
-
-                    leap(args);
-
-                    // resetSettingsAfterTimeout(settingsBeforeArgs);
-
-                } else {
-
-                    // update the UI for this jump using args
-
+                if (!args.searchTerm) {
+                    updateAllGlobalState(args);
                     inputBox.openBox();
+                } else {
+                    leap(args);
                 }
+            } else {
+                inputBox.openBox();
             }
         }),
 
-        vscode.commands.registerCommand(COMMANDS.leapForwardPreviousSearch, () => {
-            let previousSeach = getGlobalState(SETTING_NAMES.previousLeap, {});
-            previousSeach.searchBackwards = false;
-            leap(previousSeach);
-            highlightCurrentSelection();
-        }),
+        vscode.commands.registerCommand(
+            COMMANDS.leapForwardPreviousSearch,
+            () => {
+                let previousSeach = getGlobalState(
+                    SETTING_NAMES.previousLeap,
+                    {}
+                );
+                previousSeach.searchBackwards = false;
+                leap(previousSeach);
+                highlightCurrentSelection();
+            }
+        ),
 
         vscode.commands.registerCommand(COMMANDS.leapBackPreviousSearch, () => {
             let previousSeach = getGlobalState(SETTING_NAMES.previousLeap, {});
@@ -319,11 +307,9 @@ function activate(context) {
         startingCursorPosition,
         useRegex = false,
     }) {
-
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
-
             // save the search term in state
             const configs = {
                 searchTerm,
@@ -332,12 +318,10 @@ function activate(context) {
                 searchBackwards,
                 revealRange,
                 copyOnSelect,
-                startingCursorPosition,
                 useRegex,
-            }
-            updateGlobalState(SETTING_NAMES.previousLeap, configs)
+            };
 
-            if (!useRegex){
+            if (!useRegex) {
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             }
@@ -346,15 +330,6 @@ function activate(context) {
             const document = editor.document;
 
             const cursorPosition = editor.selection.active;
-
-            // if highlighting and no starting position. save cursor
-            updateGlobalState(
-                SETTING_NAMES.startingCursorPosition,
-                selectToMatch && !startingCursorPosition
-                    ? cursorPosition
-                    : undefined
-            );
-
 
             let matchPositionStart;
             let matchPositionEnd;
@@ -389,7 +364,6 @@ function activate(context) {
 
                 matchPositionStart = document.positionAt(matchOffset);
                 matchPositionEnd = document.positionAt(matchOffset - 1);
-
             } else {
                 //   Searching Forwards
                 // ----------------------
@@ -437,6 +411,11 @@ function activate(context) {
                 ? matchRange.start
                 : matchRange.end;
 
+            const startingCursorPosition = getGlobalState(
+                SETTING_NAMES.startingCursorPosition,
+                undefined
+            );
+
             editor.selection = new vscode.Selection(
                 selectToMatch
                     ? startingCursorPosition
@@ -457,11 +436,21 @@ function activate(context) {
                 vscode.TextEditorRevealType[revealRange]
             );
 
+            updateGlobalState(
+                SETTING_NAMES.startingCursorPosition,
+                selectToMatch
+                    ? startingCursorPosition
+                        ? startingCursorPosition
+                        : cursorPosition
+                    : undefined
+            );
+
             setRecentLeapContext(true);
             statusBar.backgroundColor = new vscode.ThemeColor(
                 "statusBarItem.warningBackground"
             );
             cancelRecentLeapContextAfterTimeout();
+            return configs;
         }
     }
     function highlightCurrentSelection() {
@@ -483,7 +472,6 @@ function activate(context) {
             editor.setDecorations(HIGHLIGHTS.green, [range]);
         }
     }
-
 
     // |-------------------------------|
     // |        State Functions        |
@@ -509,11 +497,11 @@ function activate(context) {
                 false
             ),
 
-            previousLeap: getGlobalState(SETTING_NAMES.previousLeap, false),
+
 
             startingCursorPosition: getGlobalState(
                 SETTING_NAMES.startingCursorPosition,
-                false
+                undefined
             ),
 
             revealRange: vscode.workspace
@@ -526,38 +514,35 @@ function activate(context) {
         };
     }
 
-    // function updateAllGlobalState ({
-    //     insertCursorLeft,
-    //     selectToMatch,
-    //     searchBackwards,
-    //     lastSearchTerm,
-    //     startingCursorPosition,
-    //     revealRange,
-    //     copyOnSelect
-    // }){
-    //     if (insertCursorLeft !== undefined){
-    //         updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
-    //     }
-    //     if (selectToMatch !== undefined){
-    //         updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
-    //     }
-    //     if (searchBackwards !== undefined){
-    //         updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
-    //     }
-    //     if (copyOnSelect !== undefined){
-    //         updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
-    //     }
-    //     if (revealRange !== undefined){
-    //         updateGlobalState(SETTING_NAMES.revealRange, revealRange);
-    //     }
-    //     if (lastSearchTerm !== undefined){
-    //         updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
-    //     }
-    //     if (startingCursorPosition !== undefined){
-    //         updateGlobalState(SETTING_NAMES.startingCursorPosition, startingCursorPosition);
-    //     }
-    //     inputBox.buttons = createButtons();
-    // }
+    function updateAllGlobalState({
+        insertCursorLeft,
+        selectToMatch,
+        searchBackwards,
+        lastSearchTerm,
+        startingCursorPosition,
+        revealRange,
+        copyOnSelect,
+    }) {
+        if (insertCursorLeft !== undefined) {
+            updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
+        }
+        if (selectToMatch !== undefined) {
+            updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
+        }
+        if (searchBackwards !== undefined) {
+            updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
+        }
+        if (copyOnSelect !== undefined) {
+            updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
+        }
+        if (revealRange !== undefined) {
+            updateGlobalState(SETTING_NAMES.revealRange, revealRange);
+        }
+        if (lastSearchTerm !== undefined) {
+            updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
+        }
+        inputBox.buttons = createButtons();
+    }
 
     // |--------------------------------|
     // |        Context Funtions        |
@@ -592,10 +577,6 @@ function activate(context) {
             setRecentLeapContext(undefined);
         }, timeout);
     }
-/*
-
-
-*/
 } // end of activate()
 
 function deactivate() {}
