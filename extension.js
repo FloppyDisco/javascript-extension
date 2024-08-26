@@ -167,23 +167,13 @@ function activate(context) {
     });
 
     inputBox.onDidChangeValue((searchTerm) => {
-        const {
-            insertCursorLeft,
-            selectToMatch,
-            searchBackwards,
-            revealRange,
-            copyOnSelect,
-        } = getAllGlobalState();
-
         inputBox.hide();
-        leap({
+
+        const configs = {
             searchTerm,
-            insertCursorLeft,
-            selectToMatch,
-            searchBackwards,
-            revealRange,
-            copyOnSelect,
-        });
+            ...getAllGlobalState(),
+        }
+        leap(configs);
         inputBox.updatePrompt(searchTerm);
     });
 
