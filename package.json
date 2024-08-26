@@ -22,12 +22,12 @@
             },
             {
                 "key": "cmd+l",
-                "command": "frogger.leapWithLastSearch",
+                "command": "frogger.leapForwardPreviousSearch",
                 "when": "FroggerIsViewable || FroggerJustLeaped"
             },
             {
                 "key": "cmd+j",
-                "command": "frogger.leapBackWithLastSearch",
+                "command": "frogger.leapBackPreviousSearch",
                 "when": "FroggerIsViewable || FroggerJustLeaped"
             },
             {
@@ -103,7 +103,7 @@
                 },
                 "frogger.repeatSearchTimeout": {
                     "type": "integer",
-                    "default": 750,
+                    "default": 1500,
                     "description": "Set the length of time the 'FroggerJustLeaped' when clause is active"
                 }
             }

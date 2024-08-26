@@ -18,8 +18,8 @@ const COMMANDS = {
     toggleSearchBackwards: "frogger.toggleSearchBackwards",
 
     leap: "frogger.leap",
-    leapWithLastSearch: "frogger.leapWithLastSearch",
-    leapBackWithLastSearch: "frogger.leapBackWithLastSearch",
+    leapForwardPreviousSearch: "frogger.leapForwardPreviousSearch",
+    leapBackPreviousSearch: "frogger.leapBackPreviousSearch",
 };
 
 const CONTEXTS = {
@@ -288,60 +288,18 @@ function activate(context) {
             }
         }),
 
-        vscode.commands.registerCommand(COMMANDS.leapWithLastSearch, () => {
-            const {
-                insertCursorLeft,
-                selectToMatch,
-                lastSearchTerm,
-                startingCursorPosition,
-                revealRange,
-                copyOnSelect,
-            } = getAllGlobalState();
-
-            if (lastSearchTerm) {
-                const searchTerm = lastSearchTerm;
-                const searchBackwards = false;
-
-                leap({
-                    searchTerm,
-                    insertCursorLeft,
-                    selectToMatch,
-                    searchBackwards,
-                    startingCursorPosition,
-                    revealRange,
-                    copyOnSelect,
-                });
-
-                highlightCurrentSelection();
-            }
+        vscode.commands.registerCommand(COMMANDS.leapForwardPreviousSearch, () => {
+            let previousSeach = getGlobalState(SETTING_NAMES.previousLeap, {});
+            previousSeach.searchBackwards = false;
+            leap(previousSeach);
+            highlightCurrentSelection();
         }),
 
-        vscode.commands.registerCommand(COMMANDS.leapBackWithLastSearch, () => {
-            const {
-                insertCursorLeft,
-                selectToMatch,
-                lastSearchTerm,
-                startingCursorPosition,
-                revealRange,
-                copyOnSelect,
-            } = getAllGlobalState();
-
-            if (lastSearchTerm) {
-                const searchTerm = lastSearchTerm;
-                const searchBackwards = true;
-
-                leap({
-                    searchTerm,
-                    insertCursorLeft,
-                    selectToMatch,
-                    searchBackwards,
-                    startingCursorPosition,
-                    revealRange,
-                    copyOnSelect,
-                });
-
-                highlightCurrentSelection();
-            }
+        vscode.commands.registerCommand(COMMANDS.leapBackPreviousSearch, () => {
+            let previousSeach = getGlobalState(SETTING_NAMES.previousLeap, {});
+            previousSeach.searchBackwards = true;
+            leap(previousSeach);
+            highlightCurrentSelection();
         }),
     ]; // end of commands
 
