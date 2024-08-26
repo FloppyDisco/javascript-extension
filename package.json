@@ -1,7 +1,7 @@
 {
     "name": "Frogger",
     "displayName": "Frogger",
-    "publisher": "Bluesteel Software",
+    "publisher": "bs-code",
     "description": "Leap cursor using single character search, similar to 'f' in vim",
     "version": "0.0.1",
     "engines": {
