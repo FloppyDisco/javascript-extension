@@ -203,7 +203,7 @@ function activate(context) {
     };
 
     inputBox.updatePrompt = (searchTerm) => {
-        inputBox.prompt = `or leap to  ${searchTerm}  again!`;
+        inputBox.prompt = `or leap to " ${searchTerm} " again!`;
     };
 
     //   Status Bar
