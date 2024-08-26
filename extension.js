@@ -77,7 +77,6 @@ const HIGHLIGHTS = {
     }),
 };
 
-let settingsTimer;
 let whenContextTimer;
 
 function activate(context) {
@@ -200,11 +199,6 @@ function activate(context) {
 
     inputBox.openBox = () => {
         setFroggerFocusContext(true);
-        if (settingsTimer){
-            const [timer, previousSettings] = settingsTimer
-            clearTimeout(timer);
-            updateAllGlobalState(previousSettings);
-        }
         inputBox.show();
     };
 
@@ -327,8 +321,7 @@ function activate(context) {
 
                     leap(args);
 
-                    settingsBeforeArgs.lastSearchTerm = searchTerm;
-                    resetSettingsAfterTimeout(settingsBeforeArgs);
+                    // resetSettingsAfterTimeout(settingsBeforeArgs);
 
                 } else {
                     inputBox.openBox();
@@ -643,25 +636,17 @@ function activate(context) {
         }
         return setWhenContext(CONTEXTS.recentLeap, value)
     }
-    function callAfterTimeout(func){
+
+    function cancelRecentLeapContextAfterTimeout(){
         const timeout = vscode.workspace
             .getConfiguration()
-            .get(SETTING_NAMES.repeatSearchTimeout,1000);
+            .get(SETTING_NAMES.repeatSearchTimeout,1500);
 
-        return setTimeout(func, timeout);
-    }
-    function resetSettingsAfterTimeout(previousSettings){
-        settingsTimer = [
-            callAfterTimeout(() => {
-            updateAllGlobalState(previousSettings);
-        }),
-         previousSettings
-        ]
-    }
-    function cancelRecentLeapContextAfterTimeout(){
-        whenContextTimer = callAfterTimeout(() => {
+        whenContextTimer = setTimeout(() => {
+            console.log('cancelling when context',);
+
             setRecentLeapContext(undefined);
-        })
+        }, timeout)
     }
 /*
 
