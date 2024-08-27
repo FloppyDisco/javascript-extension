@@ -97,20 +97,24 @@ function activate(context) {
 
     inputBox.onDidChangeValue((searchTerm) => {
         inputBox.hide();
-
         leap({
             searchTerm,
             ...getAllGlobalState(),
         });
-        inputBox.updatePrompt(searchTerm);
     });
 
     inputBox.onDidAccept(() => {
+        inputBox.hide();
         // call leap with previous search term
-        // vscode.commands.executeCommand(COMMANDS.repeatLeapForward);
+        const { searchTerm } = getGlobalState(SETTING_NAMES.previousLeap, {});
+        if (searchTerm) {
+            leap({
+                searchTerm,
+                ...getAllGlobalState(),
+            });
+        }
     });
-
-    inputBox.onDidHide(() => {
+    +inputBox.onDidHide(() => {
         inputBox.value = "";
         setFroggerFocusContext(undefined);
         vscode.window.activeTextEditor?.setDecorations(HIGHLIGHTS.green, []);
@@ -122,7 +126,7 @@ function activate(context) {
     };
 
     inputBox.updatePrompt = (searchTerm) => {
-        inputBox.prompt = `or leap again with " ${searchTerm} "`;
+        inputBox.prompt = `or leap using  ${searchTerm}  again`;
     };
 
     //   Status Bar
@@ -193,7 +197,6 @@ function activate(context) {
                     inputBox.openBox();
                 } else {
                     leap(args);
-                    inputBox.updatePrompt(args.searchTerm)
                 }
             } else {
                 inputBox.openBox();
@@ -202,7 +205,6 @@ function activate(context) {
 
         vscode.commands.registerCommand(COMMANDS.repeatLeapForward, () => {
             let previousSearch = getGlobalState(SETTING_NAMES.previousLeap, {});
-            console.log("previousSearch", previousSearch);
 
             previousSearch.searchBackwards = false;
             leap(previousSearch);
@@ -211,8 +213,6 @@ function activate(context) {
 
         vscode.commands.registerCommand(COMMANDS.repeatLeapBack, () => {
             let previousSearch = getGlobalState(SETTING_NAMES.previousLeap, {});
-            console.log("previousSeach", previousSearch);
-
             previousSearch.searchBackwards = true;
             leap(previousSearch);
             highlightCurrentSelection(previousSearch);
@@ -224,7 +224,7 @@ function activate(context) {
 
     context.subscriptions.push(inputBox, ...commands);
 
-    function highlightCurrentSelection({insertCursorLeft}) {
+    function highlightCurrentSelection({ insertCursorLeft }) {
         // highlight the current position in the editor for clarity
         const editor = vscode.window.activeTextEditor;
         if (editor) {
@@ -234,9 +234,8 @@ function activate(context) {
             const range = new vscode.Range(
                 editor.selection.start,
                 editor.document.positionAt(
-                    editor.document.offsetAt(editor.selection.end)
-                    +
-                     (insertCursorLeft ? 1 : -1)
+                    editor.document.offsetAt(editor.selection.end) +
+                        (insertCursorLeft ? 1 : -1)
                 )
             );
             editor.setDecorations(HIGHLIGHTS.green, [range]);
@@ -248,8 +247,6 @@ function activate(context) {
     // |-------------------------------|
 
     function updateGlobalState(settingName, value) {
-        console.log('updating ',settingName, ' to ', value);
-
         context.globalState.update(settingName, value);
     }
     function getGlobalState(settingName, settingDefault) {
@@ -345,24 +342,21 @@ function activate(context) {
         startingCursorPosition,
         useRegex = false,
     }) {
-
-        console.log('\n\nleap function called',);
-        console.log('Settings: ',{
-            searchTerm,
-            insertCursorLeft,
-            selectToMatch,
-            searchBackwards,
-            revealRange,
-            copyOnSelect,
-            startingCursorPosition,
-            useRegex,
-        }, '\n\n');
-
+        // console.log('\n\nleap function called',);
+        // console.log('Settings: ',{
+        //     searchTerm,
+        //     insertCursorLeft,
+        //     selectToMatch,
+        //     searchBackwards,
+        //     revealRange,
+        //     copyOnSelect,
+        //     startingCursorPosition,
+        //     useRegex,
+        // }, '\n\n');
 
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
-            // save the search term in state
             const originalSearchTerm = searchTerm;
             if (!useRegex) {
                 // escape any regex special characters
@@ -534,7 +528,7 @@ function activate(context) {
                 copyOnSelect,
                 useRegex,
             });
-
+            inputBox.updatePrompt(originalSearchTerm);
         }
     }
     /*
