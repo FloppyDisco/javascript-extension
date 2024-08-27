@@ -18,12 +18,13 @@ exports.COMMANDS = {
     toggleSearchBackwards: "frogger.toggleSearchBackwards",
 
     leap: "frogger.leap",
-    leapForwardPreviousSearch: "frogger.leapForwardPreviousSearch",
-    leapBackPreviousSearch: "frogger.leapBackPreviousSearch",
+    repeatLeapForward: "frogger.repeatLeapForward",
+    repeatLeapBack: "frogger.repeatLeapBack",
+    leapWithPreviousSearchTerm: "frogger.leapWithPreviousSearchTerm",
 };
 
 exports.CONTEXTS = {
-    froggerIsViewable: "FroggerIsViewable",
+    froggerFocus: "FroggerFocus",
     froggerJustLeaped: "FroggerJustLeaped",
 };
 
