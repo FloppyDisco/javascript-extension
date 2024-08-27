@@ -4,7 +4,7 @@
     "publisher": "bs-code",
     "repository": "https://github.com/FloppyDisco/frogger",
     "description": "Leap cursor using single character search, similar to 'f' in vim",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "engines": {
         "vscode": "^1.91.0"
     },
