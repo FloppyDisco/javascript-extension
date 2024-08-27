@@ -382,7 +382,7 @@ function activate(context) {
                         // to the bottom of document
                         new vscode.Position(
                             lastLine,
-                            document.lineAt(lastLine).range.end
+                            document.lineAt(lastLine).text.length
                         )
                     )
                 );
