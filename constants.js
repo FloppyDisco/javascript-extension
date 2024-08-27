@@ -1,7 +1,5 @@
 const vscode = require("vscode");
 
-exports.vscode = vscode;
-
 exports.SETTING_NAMES = {
     insertCursorLeft: "frogger.insertCursorLeft",
     selectToMatch: "frogger.selectToMatch",

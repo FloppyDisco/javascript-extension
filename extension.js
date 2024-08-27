@@ -1,4 +1,5 @@
-const {vscode, COMMANDS, SETTING_NAMES, BUTTONS, CONTEXTS, HIGHLIGHTS}= require('./constants')
+const vscode = require("vscode");
+const {COMMANDS, SETTING_NAMES, BUTTONS, CONTEXTS, HIGHLIGHTS}= require('./constants');
 
 let whenContextTimer;
 
