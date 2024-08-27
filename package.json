@@ -23,13 +23,13 @@
             },
             {
                 "key": "cmd+l",
-                "command": "frogger.leapForwardPreviousSearch",
-                "when": "FroggerIsViewable || FroggerJustLeaped"
+                "command": "frogger.repeatLeapForward",
+                "when": "FroggerJustLeaped || FroggerFocus"
             },
             {
                 "key": "cmd+j",
-                "command": "frogger.leapBackPreviousSearch",
-                "when": "FroggerIsViewable || FroggerJustLeaped"
+                "command": "frogger.repeatLeapBack",
+                "when": "FroggerJustLeaped || FroggerFocus"
             },
             {
                 "key": "cmd+i",
@@ -59,15 +59,15 @@
         "commands": [
             {
                 "command": "frogger.leap",
-                "title": "leap to character ..."
+                "title": "leap to a character ..."
             },
             {
-                "command": "frogger.leapWithLastSearch",
-                "title": "leap again using the previous search character"
+                "command": "frogger.repeatLeapForward",
+                "title": "repeat the previous leap, searching forward"
             },
             {
-                "command": "frogger.leapBackWithLastSearch",
-                "title": "leap back using the previous search character"
+                "command": "frogger.repeatLeapBack",
+                "title": "repeat the previous leap, searching backwards"
             },
             {
                 "command": "frogger.toggleInsertCursor",
