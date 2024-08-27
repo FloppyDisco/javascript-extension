@@ -95,11 +95,7 @@ function activate(context) {
         const configs = {
             searchTerm,
             ...getAllGlobalState(),
-        };
-
-        updateGlobalState(SETTING_NAMES.startingCursorPosition, undefined);
-        leap(configs);
-        updateGlobalState(SETTING_NAMES.previousLeap, configs);
+        });
         inputBox.updatePrompt(searchTerm);
     });
 
@@ -235,16 +231,7 @@ function activate(context) {
 
         if (editor && searchTerm) {
             // save the search term in state
-            const configs = {
-                searchTerm,
-                insertCursorLeft,
-                selectToMatch,
-                searchBackwards,
-                revealRange,
-                copyOnSelect,
-                useRegex,
-            };
-
+            const originalSearchTerm = searchTerm
             if (!useRegex) {
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -381,7 +368,17 @@ function activate(context) {
                 "statusBarItem.warningBackground"
             );
             cancelRecentLeapContextAfterTimeout();
-            return configs;
+
+            updateGlobalState(SETTING_NAMES.previousLeap, {
+                    searchTerm: originalSearchTerm,
+                    leapFinalPosition: newCursorPosition,
+                    insertCursorLeft,
+                    selectToMatch,
+                    searchBackwards,
+                    revealRange,
+                    copyOnSelect,
+                    useRegex,
+            });
         }
     }
 
