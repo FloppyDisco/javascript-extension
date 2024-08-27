@@ -92,7 +92,7 @@ function activate(context) {
     inputBox.onDidChangeValue((searchTerm) => {
         inputBox.hide();
 
-        const configs = {
+        leap({
             searchTerm,
             ...getAllGlobalState(),
         });
