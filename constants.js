@@ -10,7 +10,7 @@ exports.SETTING_NAMES = {
     revealRange: "frogger.revealRange",
     previousLeap: "frogger.previousLeap",
     jumpedToPosition: "frogger.jumpedToPosition",
-    selectFromOriginalCursorPosition: "frogger.selectFromOriginalCursorPosition",
+    continueSelectionFrom: "frogger.continueSelectionFrom",
     repeatSearchTimeout: "frogger.repeatSearchTimeout",
 };
 
@@ -27,7 +27,7 @@ exports.COMMANDS = {
 
 exports.CONTEXTS = {
     froggerIsViewable: "FroggerIsViewable",
-    recentLeap: "FroggerJustLeaped",
+    froggerJustLeaped: "FroggerJustLeaped",
 };
 
 exports.BUTTONS = {

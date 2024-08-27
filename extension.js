@@ -384,7 +384,7 @@ function activate(context) {
         }
     }
 
-    
+
     function highlightCurrentSelection() {
         // highlight the current position in the editor for clarity
         const editor = vscode.window.activeTextEditor;
@@ -490,7 +490,7 @@ function activate(context) {
         if (whenContextTimer) {
             clearTimeout(whenContextTimer);
         }
-        return setWhenContext(CONTEXTS.recentLeap, value);
+        return setWhenContext(CONTEXTS.froggerJustLeaped, value);
     }
 
     function cancelRecentLeapContextAfterTimeout() {
