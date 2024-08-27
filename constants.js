@@ -9,7 +9,6 @@ exports.SETTING_NAMES = {
     copyOnSelect: "frogger.copyOnSelect",
     revealRange: "frogger.revealRange",
     previousLeap: "frogger.previousLeap",
-    jumpedToPosition: "frogger.jumpedToPosition",
     continueSelectionFrom: "frogger.continueSelectionFrom",
     repeatSearchTimeout: "frogger.repeatSearchTimeout",
 };
