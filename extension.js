@@ -325,7 +325,7 @@ function activate(context) {
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             }
-            const searchTermRegex = new RegExp(searchTerm, "g");
+            const searchTermRegex = new RegExp(searchTerm, "i");
 
             const document = editor.document;
 
