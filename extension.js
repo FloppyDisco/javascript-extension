@@ -254,6 +254,11 @@ function activate(context) {
 
             const cursorPosition = editor.selection.active;
 
+
+            // |--------------------------|
+            // |        Find Match        |
+            // |--------------------------|
+
             let matchPositionStart;
             let matchPositionEnd;
 
@@ -323,7 +328,9 @@ function activate(context) {
                 matchPositionEnd = document.positionAt(matchOffset + 1);
             }
 
-            // create selection in doc from match position.
+            // |----------------------------------------------|
+            // |        Move editor selection to match        |
+            // |----------------------------------------------|
 
             const matchRange = new vscode.Range(
                 matchPositionStart,
@@ -376,6 +383,8 @@ function activate(context) {
             return configs;
         }
     }
+
+    
     function highlightCurrentSelection() {
         // highlight the current position in the editor for clarity
         const editor = vscode.window.activeTextEditor;
