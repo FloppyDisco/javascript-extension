@@ -34,17 +34,17 @@
             {
                 "key": "cmd+i",
                 "command": "frogger.toggleInsertCursor",
-                "when": "FroggerIsViewable"
+                "when": "FroggerFocus"
             },
             {
                 "key": "cmd+o",
                 "command": "frogger.toggleSelectToMatch",
-                "when": "FroggerIsViewable"
+                "when": "FroggerFocus"
             },
             {
                 "key": "cmd+u",
                 "command": "frogger.toggleSearchBackwards",
-                "when": "FroggerIsViewable"
+                "when": "FroggerFocus"
             },
             {
                 "key": "cmd+j",
@@ -104,7 +104,7 @@
                 },
                 "frogger.repeatSearchTimeout": {
                     "type": "integer",
-                    "default": 1200,
+                    "default": 900,
                     "description": "Set the length of time the 'FroggerJustLeaped' when clause is active"
                 }
             }
