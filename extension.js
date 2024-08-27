@@ -122,7 +122,7 @@ function activate(context) {
     };
 
     inputBox.updatePrompt = (searchTerm) => {
-        inputBox.prompt = `or leap to " ${searchTerm} " again!`;
+        inputBox.prompt = `or leap again with " ${searchTerm} "`;
     };
 
     //   Status Bar
@@ -199,23 +199,21 @@ function activate(context) {
             }
         }),
 
-        vscode.commands.registerCommand(
-            COMMANDS.leapForwardPreviousSearch,
-            () => {
-                let previousSeach = getGlobalState(
-                    SETTING_NAMES.previousLeap,
-                    {}
-                );
-                previousSeach.searchBackwards = false;
-                leap(previousSeach);
-                highlightCurrentSelection();
-            }
-        ),
+        vscode.commands.registerCommand(COMMANDS.repeatLeapForward, () => {
+            let previousSearch = getGlobalState(SETTING_NAMES.previousLeap, {});
+            console.log("previousSearch", previousSearch);
 
-        vscode.commands.registerCommand(COMMANDS.leapBackPreviousSearch, () => {
-            let previousSeach = getGlobalState(SETTING_NAMES.previousLeap, {});
-            previousSeach.searchBackwards = true;
-            leap(previousSeach);
+            previousSearch.searchBackwards = false;
+            leap(previousSearch);
+            highlightCurrentSelection();
+        }),
+
+        vscode.commands.registerCommand(COMMANDS.repeatLeapBack, () => {
+            let previousSearch = getGlobalState(SETTING_NAMES.previousLeap, {});
+            console.log("previousSeach", previousSearch);
+
+            previousSearch.searchBackwards = true;
+            leap(previousSearch);
             highlightCurrentSelection();
         }),
         /*
@@ -243,7 +241,7 @@ function activate(context) {
 
         if (editor && searchTerm) {
             // save the search term in state
-            const originalSearchTerm = searchTerm
+            const originalSearchTerm = searchTerm;
             if (!useRegex) {
                 // escape any regex special characters
                 searchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -253,7 +251,6 @@ function activate(context) {
             const document = editor.document;
 
             const cursorPosition = editor.selection.active;
-
 
             // |--------------------------|
             // |        Find Match        |
