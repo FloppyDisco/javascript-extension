@@ -131,9 +131,5 @@ Frogger includes several customizable settings:
 
 ### `frogger.repeatSearchTimeout`
 - **Type**: `integer`
-- **Default**: `3000`
-- **Description**: Sets the length of time (in milliseconds) the `CanLeapAgain` context is active after a leap.
-
-## License
-
-This extension is licensed under the [MIT License](LICENSE).
+- **Default**: `1200`
+- **Description**: Sets the length of time (in milliseconds) the `FroggerJustLeaped` context is active after a leap.
