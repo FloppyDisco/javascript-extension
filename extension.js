@@ -1,5 +1,11 @@
 const vscode = require("vscode");
-const {COMMANDS, SETTING_NAMES, BUTTONS, CONTEXTS, HIGHLIGHTS}= require('./constants');
+const {
+    COMMANDS,
+    SETTING_NAMES,
+    BUTTONS,
+    CONTEXTS,
+    HIGHLIGHTS,
+} = require("./constants");
 
 let whenContextTimer;
 
@@ -100,7 +106,8 @@ function activate(context) {
     });
 
     inputBox.onDidAccept(() => {
-        vscode.commands.executeCommand(COMMANDS.leapForwardPreviousSearch);
+        // call leap with previous search term
+        // vscode.commands.executeCommand(COMMANDS.repeatLeapForward);
     });
 
     inputBox.onDidHide(() => {
@@ -130,11 +137,14 @@ function activate(context) {
     statusBar.command = COMMANDS.openBox;
     statusBar.show();
 
-    // |---------------------------|
-    // |        UI Commands        |
-    // |---------------------------|
+    // |------------------------|
+    // |        Commands        |
+    // |------------------------|
 
     const commands = [
+        //   UI Commands
+        // ---------------
+
         vscode.commands.registerCommand(COMMANDS.openBox, () => {
             inputBox.openBox();
         }),
@@ -172,9 +182,8 @@ function activate(context) {
             inputBox.buttons = createButtons();
         }),
 
-        // |-------------------------------|
-        // |        Search Commands        |
-        // |-------------------------------|
+        //   Search Commands
+        // -------------------
 
         vscode.commands.registerCommand(COMMANDS.leap, (args) => {
             if (args) {
@@ -209,6 +218,9 @@ function activate(context) {
             leap(previousSeach);
             highlightCurrentSelection();
         }),
+        /*
+
+        */
     ]; // end of commands
 
     context.subscriptions.push(inputBox, ...commands);
@@ -354,16 +366,14 @@ function activate(context) {
                 vscode.TextEditorRevealType[revealRange]
             );
 
-            updateGlobalState(
-                SETTING_NAMES.startingCursorPosition,
-                selectToMatch
-                    ? startingCursorPosition
-                        ? startingCursorPosition
-                        : cursorPosition
-                    : undefined
-            );
+            // |-----------------------------|
+            // |        Leap Complete        |
+            // |-----------------------------|
 
-            setRecentLeapContext(true);
+            //   set recentLeap when context
+            // -------------------------------
+
+            setFroggerLeapedContext(true);
             statusBar.backgroundColor = new vscode.ThemeColor(
                 "statusBarItem.warningBackground"
             );
