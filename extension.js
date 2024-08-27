@@ -29,7 +29,7 @@ function activate(context) {
     // make sure previousLeap is not set
     updateGlobalState(SETTING_NAMES.previousLeap, {});
 
-    updateGlobalState(SETTING_NAMES.startingCursorPosition, undefined);
+    updateGlobalState(SETTING_NAMES.continueSelectionFrom, undefined);
 
     // |-------------------------|
     // |        create UI        |
@@ -193,6 +193,7 @@ function activate(context) {
                     inputBox.openBox();
                 } else {
                     leap(args);
+                    inputBox.updatePrompt(args.searchTerm)
                 }
             } else {
                 inputBox.openBox();
@@ -205,7 +206,7 @@ function activate(context) {
 
             previousSearch.searchBackwards = false;
             leap(previousSearch);
-            highlightCurrentSelection();
+            highlightCurrentSelection(previousSearch);
         }),
 
         vscode.commands.registerCommand(COMMANDS.repeatLeapBack, () => {
@@ -214,14 +215,121 @@ function activate(context) {
 
             previousSearch.searchBackwards = true;
             leap(previousSearch);
-            highlightCurrentSelection();
+            highlightCurrentSelection(previousSearch);
         }),
-        /*
+        /*+
 
         */
     ]; // end of commands
 
     context.subscriptions.push(inputBox, ...commands);
+
+    function highlightCurrentSelection({insertCursorLeft}) {
+        // highlight the current position in the editor for clarity
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            // clear previous highlighting
+            editor.setDecorations(HIGHLIGHTS.green, []);
+
+            const range = new vscode.Range(
+                editor.selection.start,
+                editor.document.positionAt(
+                    editor.document.offsetAt(editor.selection.end)
+                    +
+                     (insertCursorLeft ? 1 : -1)
+                )
+            );
+            editor.setDecorations(HIGHLIGHTS.green, [range]);
+        }
+    }
+
+    // |-------------------------------|
+    // |        State Functions        |
+    // |-------------------------------|
+
+    function updateGlobalState(settingName, value) {
+        console.log('updating ',settingName, ' to ', value);
+
+        context.globalState.update(settingName, value);
+    }
+    function getGlobalState(settingName, settingDefault) {
+        return context.globalState.get(settingName, settingDefault);
+    }
+    function getAllGlobalState() {
+        return {
+            insertCursorLeft: getGlobalState(
+                SETTING_NAMES.insertCursorLeft,
+                false
+            ),
+
+            selectToMatch: getGlobalState(SETTING_NAMES.selectToMatch, false),
+
+            searchBackwards: getGlobalState(
+                SETTING_NAMES.searchBackwards,
+                false
+            ),
+
+            startingCursorPosition: getGlobalState(
+                SETTING_NAMES.continueSelectionFrom,
+                undefined
+            ),
+
+            revealRange: vscode.workspace
+                .getConfiguration()
+                .get(SETTING_NAMES.revealRange, "Default"),
+
+            copyOnSelect: vscode.workspace
+                .getConfiguration()
+                .get(SETTING_NAMES.copyOnSelect, "Default"),
+        };
+    }
+
+    function updateAllGlobalState({
+        insertCursorLeft,
+        selectToMatch,
+        searchBackwards,
+        lastSearchTerm,
+        startingCursorPosition,
+        revealRange,
+        copyOnSelect,
+    }) {
+        if (insertCursorLeft !== undefined) {
+            updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
+        }
+        if (selectToMatch !== undefined) {
+            updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
+        }
+        if (searchBackwards !== undefined) {
+            updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
+        }
+        if (copyOnSelect !== undefined) {
+            updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
+        }
+        if (revealRange !== undefined) {
+            updateGlobalState(SETTING_NAMES.revealRange, revealRange);
+        }
+        if (lastSearchTerm !== undefined) {
+            updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
+        }
+        inputBox.buttons = createButtons();
+    }
+
+    // |--------------------------------|
+    // |        Context Funtions        |
+    // |--------------------------------|
+
+    function setWhenContext(key, value) {
+        return vscode.commands.executeCommand("setContext", key, value);
+    }
+    function setFroggerFocusContext(value) {
+        return setWhenContext(CONTEXTS.froggerFocus, value);
+    }
+    function setFroggerLeapedContext(value) {
+        if (whenContextTimer) {
+            clearTimeout(whenContextTimer);
+        }
+        return setWhenContext(CONTEXTS.froggerJustLeaped, value);
+    }
 
     // |--------------------|
     // |        leap        |
@@ -237,6 +345,20 @@ function activate(context) {
         startingCursorPosition,
         useRegex = false,
     }) {
+
+        console.log('\n\nleap function called',);
+        console.log('Settings: ',{
+            searchTerm,
+            insertCursorLeft,
+            selectToMatch,
+            searchBackwards,
+            revealRange,
+            copyOnSelect,
+            startingCursorPosition,
+            useRegex,
+        }, '\n\n');
+
+
         const editor = vscode.window.activeTextEditor;
 
         if (editor && searchTerm) {
@@ -339,7 +461,7 @@ function activate(context) {
                 : matchRange.end;
 
             const startingCursorPosition = getGlobalState(
-                SETTING_NAMES.startingCursorPosition,
+                SETTING_NAMES.continueSelectionFrom,
                 undefined
             );
 
@@ -374,146 +496,50 @@ function activate(context) {
             statusBar.backgroundColor = new vscode.ThemeColor(
                 "statusBarItem.warningBackground"
             );
-            cancelRecentLeapContextAfterTimeout();
 
-            updateGlobalState(SETTING_NAMES.previousLeap, {
-                    searchTerm: originalSearchTerm,
-                    leapFinalPosition: newCursorPosition,
-                    insertCursorLeft,
-                    selectToMatch,
-                    searchBackwards,
-                    revealRange,
-                    copyOnSelect,
-                    useRegex,
-            });
-        }
-    }
+            //   cancel recentLeapContext after timeout
+            // ------------------------------------------
 
-
-    function highlightCurrentSelection() {
-        // highlight the current position in the editor for clarity
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            // clear previous highlighting
-            editor.setDecorations(HIGHLIGHTS.green, []);
-
-            const { searchBackwards, insertCursorLeft } = getAllGlobalState();
-
-            const range = new vscode.Range(
-                editor.selection.start,
-                editor.document.positionAt(
-                    editor.document.offsetAt(editor.selection.end) +
-                        (insertCursorLeft ? 1 : -1)
-                )
-            );
-            editor.setDecorations(HIGHLIGHTS.green, [range]);
-        }
-    }
-
-    // |-------------------------------|
-    // |        State Functions        |
-    // |-------------------------------|
-
-    function updateGlobalState(settingName, value) {
-        context.globalState.update(settingName, value);
-    }
-    function getGlobalState(settingName, settingDefault) {
-        return context.globalState.get(settingName, settingDefault);
-    }
-    function getAllGlobalState() {
-        return {
-            insertCursorLeft: getGlobalState(
-                SETTING_NAMES.insertCursorLeft,
-                false
-            ),
-
-            selectToMatch: getGlobalState(SETTING_NAMES.selectToMatch, false),
-
-            searchBackwards: getGlobalState(
-                SETTING_NAMES.searchBackwards,
-                false
-            ),
-
-
-
-            startingCursorPosition: getGlobalState(
-                SETTING_NAMES.startingCursorPosition,
-                undefined
-            ),
-
-            revealRange: vscode.workspace
+            const timeout = vscode.workspace
                 .getConfiguration()
-                .get(SETTING_NAMES.revealRange, "Default"),
+                .get(SETTING_NAMES.repeatSearchTimeout, 900);
 
-            copyOnSelect: vscode.workspace
-                .getConfiguration()
-                .get(SETTING_NAMES.copyOnSelect, "Default"),
-        };
-    }
-
-    function updateAllGlobalState({
-        insertCursorLeft,
-        selectToMatch,
-        searchBackwards,
-        lastSearchTerm,
-        startingCursorPosition,
-        revealRange,
-        copyOnSelect,
-    }) {
-        if (insertCursorLeft !== undefined) {
-            updateGlobalState(SETTING_NAMES.insertCursorLeft, insertCursorLeft);
-        }
-        if (selectToMatch !== undefined) {
-            updateGlobalState(SETTING_NAMES.selectToMatch, selectToMatch);
-        }
-        if (searchBackwards !== undefined) {
-            updateGlobalState(SETTING_NAMES.searchBackwards, searchBackwards);
-        }
-        if (copyOnSelect !== undefined) {
-            updateGlobalState(SETTING_NAMES.copyOnSelect, copyOnSelect);
-        }
-        if (revealRange !== undefined) {
-            updateGlobalState(SETTING_NAMES.revealRange, revealRange);
-        }
-        if (lastSearchTerm !== undefined) {
-            updateGlobalState(SETTING_NAMES.lastSearchTerm, lastSearchTerm);
-        }
-        inputBox.buttons = createButtons();
-    }
-
-    // |--------------------------------|
-    // |        Context Funtions        |
-    // |--------------------------------|
-
-    function setWhenContext(key, value) {
-        return vscode.commands.executeCommand("setContext", key, value);
-    }
-    function setFroggerFocusContext(value) {
-        return setWhenContext(CONTEXTS.froggerIsViewable, value);
-    }
-    function setRecentLeapContext(value) {
-        if (whenContextTimer) {
-            clearTimeout(whenContextTimer);
-        }
-        return setWhenContext(CONTEXTS.froggerJustLeaped, value);
-    }
-
-    function cancelRecentLeapContextAfterTimeout() {
-        const timeout = vscode.workspace
-            .getConfiguration()
-            .get(SETTING_NAMES.repeatSearchTimeout, 1500);
-
-        whenContextTimer = setTimeout(() => {
-            // clear status bar background
-            statusBar.backgroundColor = "";
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
+            whenContextTimer = setTimeout(() => {
+                // clear status bar background
+                statusBar.backgroundColor = "";
                 // clear any highlighting
                 editor.setDecorations(HIGHLIGHTS.green, []);
-            }
-            setRecentLeapContext(undefined);
-        }, timeout);
+                setFroggerLeapedContext(undefined);
+            }, timeout);
+
+            //   save leap to global state
+            // -----------------------------
+
+            updateGlobalState(
+                SETTING_NAMES.continueSelectionFrom,
+                selectToMatch
+                    ? startingCursorPosition
+                        ? startingCursorPosition
+                        : cursorPosition
+                    : undefined
+            );
+
+            updateGlobalState(SETTING_NAMES.previousLeap, {
+                searchTerm: originalSearchTerm,
+                leapFinalPosition: newPosition,
+                insertCursorLeft,
+                selectToMatch,
+                searchBackwards,
+                revealRange,
+                copyOnSelect,
+                useRegex,
+            });
+
+        }
     }
+    /*
+
+    */
 } // end of activate()
 
 function deactivate() {}
