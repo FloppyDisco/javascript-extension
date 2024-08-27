@@ -94,13 +94,13 @@ here is a snippet of how you can create a keybinding to copy the function parame
 - to write a regular expression token inside json, the backslash must be escaped in the json, so `"\d"` becomes `"\\d"`
 
 
-### `frogger.leapWithLastSearch`
+### `frogger.repeatLeapForward`
 
-Leaps the cursor using the previously used search term.
+Repeat the previous leap! searching forward.
 
-### `frogger.leapBackWithLastSearch`
+### `frogger.repeatLeapBack`
 
-Leaps the cursor backwards using the previously used search term.
+Repeat the previous leap! searching backwards.
 
 ### `frogger.toggleInsertCursor`
 
@@ -131,5 +131,5 @@ Frogger includes several customizable settings:
 
 ### `frogger.repeatSearchTimeout`
 - **Type**: `integer`
-- **Default**: `1200`
+- **Default**: `900`
 - **Description**: Sets the length of time (in milliseconds) the `FroggerJustLeaped` context is active after a leap.
